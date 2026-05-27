@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+import("../dist/cli/index.js")
+  .catch((err) => {
+    process.stderr.write(
+      `error: could not load dist/cli/index.js — did you run \`pnpm build\`?\n` +
+        `${err && err.message ? err.message : err}\n`,
+    );
+    process.exit(1);
+  })
+  .then((m) => m && m.main())
+  .catch((err) => {
+    process.stderr.write(`error: ${err && err.message ? err.message : err}\n`);
+    process.exit(1);
+  });

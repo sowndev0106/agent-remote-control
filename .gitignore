@@ -1,3 +1,7 @@
 /ref-source
 /.superpowers
+/node_modules
+/dist
+/coverage
+*.log
 

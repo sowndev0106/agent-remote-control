@@ -1,0 +1,5 @@
+onlyBuiltDependencies:
+  - argon2
+  - bcrypt
+  - node-pty
+  - esbuild
