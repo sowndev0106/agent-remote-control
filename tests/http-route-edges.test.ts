@@ -203,6 +203,161 @@ describe("adapter and pty route edge branches", () => {
     expect(resumeDead.statusCode).toBe(410);
     expect(resumeDead.json().error.code).toBe("managed_pty_resume_failed");
   });
+
+  it("covers authenticated adapter success paths without launching Antigravity", async () => {
+    const app = fixture.assembled.app;
+    const projectId = await createProject();
+    const session = SessionStoreLite.makeSession({
+      providerId: "antigravity",
+      source: "cdp",
+      projectPath: root,
+    });
+    fixture.assembled.deps.agentSessions.set(session);
+
+    vi.spyOn(fixture.assembled.deps.discovery, "discover").mockResolvedValue([
+      { sessionId: "d1", providerId: "antigravity", source: "cdp", hint: "tab" },
+    ]);
+    vi.spyOn(fixture.assembled.deps.antigravity, "start").mockResolvedValue(session);
+    vi.spyOn(fixture.assembled.deps.antigravity, "attach").mockResolvedValue(session);
+    vi.spyOn(fixture.assembled.deps.antigravity, "sendPrompt").mockResolvedValue();
+    vi.spyOn(fixture.assembled.deps.antigravity, "stop").mockResolvedValue();
+    vi.spyOn(fixture.assembled.deps.antigravity, "getSnapshot").mockResolvedValue({
+      hash: "h1",
+      capturedAt: 1,
+      html: "<p>x</p>",
+    });
+    vi.spyOn(fixture.assembled.deps.antigravity, "getActions").mockResolvedValue([
+      { actionId: "a1", label: "New chat", kind: "button", enabled: true },
+    ]);
+    vi.spyOn(fixture.assembled.deps.antigravity, "performAction").mockResolvedValue();
+    vi.spyOn(fixture.assembled.deps.antigravity, "listConversations").mockResolvedValue([
+      { conversationId: "c1", title: "Chat 1" },
+    ]);
+    vi.spyOn(fixture.assembled.deps.antigravity, "selectConversation").mockResolvedValue();
+
+    const discover = await app.inject({
+      method: "POST",
+      url: "/api/sessions/discover",
+      headers: authHeaders(),
+      payload: { projectId },
+    });
+    expect(discover.statusCode).toBe(200);
+    expect(discover.json().data.sessions[0].sessionId).toBe("d1");
+
+    const launch = await app.inject({
+      method: "POST",
+      url: "/api/sessions/launch",
+      headers: authHeaders(),
+      payload: { projectId, providerId: "antigravity" },
+    });
+    expect(launch.statusCode).toBe(200);
+
+    const attach = await app.inject({
+      method: "POST",
+      url: `/api/sessions/${session.sessionId}/attach`,
+      headers: authHeaders(),
+    });
+    expect(attach.statusCode).toBe(200);
+
+    const prompt = await app.inject({
+      method: "POST",
+      url: `/api/sessions/${session.sessionId}/prompt`,
+      headers: authHeaders(),
+      payload: { text: "hello", conversationId: "c1" },
+    });
+    expect(prompt.statusCode).toBe(200);
+
+    const stop = await app.inject({
+      method: "POST",
+      url: `/api/sessions/${session.sessionId}/stop`,
+      headers: authHeaders(),
+    });
+    expect(stop.statusCode).toBe(200);
+
+    const snapshot = await app.inject({
+      method: "GET",
+      url: `/api/sessions/${session.sessionId}/snapshot`,
+      headers: { cookie: fixture.cookieHeader },
+    });
+    expect(snapshot.json().data.snapshot.hash).toBe("h1");
+
+    const actions = await app.inject({
+      method: "GET",
+      url: `/api/sessions/${session.sessionId}/actions`,
+      headers: { cookie: fixture.cookieHeader },
+    });
+    expect(actions.json().data.actions[0].actionId).toBe("a1");
+
+    const action = await app.inject({
+      method: "POST",
+      url: `/api/sessions/${session.sessionId}/actions/a1`,
+      headers: authHeaders(),
+    });
+    expect(action.statusCode).toBe(200);
+
+    const conversations = await app.inject({
+      method: "GET",
+      url: `/api/sessions/${session.sessionId}/conversations`,
+      headers: { cookie: fixture.cookieHeader },
+    });
+    expect(conversations.json().data.conversations[0].conversationId).toBe("c1");
+
+    const selectConversation = await app.inject({
+      method: "POST",
+      url: `/api/sessions/${session.sessionId}/conversations/c1/select`,
+      headers: authHeaders(),
+    });
+    expect(selectConversation.statusCode).toBe(200);
+
+    const newConversation = await app.inject({
+      method: "POST",
+      url: `/api/sessions/${session.sessionId}/new-conversation`,
+      headers: authHeaders(),
+    });
+    expect(newConversation.statusCode).toBe(200);
+
+    const scroll = await app.inject({
+      method: "POST",
+      url: `/api/sessions/${session.sessionId}/scroll`,
+      headers: authHeaders(),
+      payload: { fraction: 0.5 },
+    });
+    expect(scroll.statusCode).toBe(200);
+  });
+
+  it("covers pty launch and signal routes with mocked PTY adapter methods", async () => {
+    const app = fixture.assembled.app;
+    const projectId = await createProject();
+    const session = SessionStoreLite.makeSession({
+      providerId: "antigravity",
+      source: "managed-pty",
+      projectPath: root,
+    });
+    vi.spyOn(fixture.assembled.deps.pty, "launch").mockResolvedValue(session);
+    vi.spyOn(fixture.assembled.deps.pty, "signal").mockImplementation(() => {});
+
+    const launched = await app.inject({
+      method: "POST",
+      url: "/api/sessions/pty/launch",
+      headers: authHeaders(),
+      payload: { projectId },
+    });
+    expect(launched.statusCode).toBe(200);
+    expect(launched.json().data.debugPort).toBeTypeOf("number");
+
+    fixture.assembled.deps.agentSessions.set(session);
+    const signal = await app.inject({
+      method: "POST",
+      url: `/api/sessions/${session.sessionId}/pty/signal`,
+      headers: authHeaders(),
+      payload: { signal: "SIGTERM" },
+    });
+    expect(signal.statusCode).toBe(200);
+    expect(fixture.assembled.deps.pty.signal).toHaveBeenCalledWith(
+      session.sessionId,
+      "SIGTERM",
+    );
+  });
 });
 
 describe("terminal route edge branches", () => {
