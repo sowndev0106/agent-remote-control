@@ -19,6 +19,7 @@ import { RealtimeBus } from "../src/server/core/realtime/bus.js";
 import { AntigravityCdpAdapter } from "../src/server/adapters/antigravity/index.js";
 import { AntigravityPtyAdapter } from "../src/server/adapters/antigravity/pty.js";
 import { DebugPortPool } from "../src/server/ipc/wire.js";
+import { TerminalService } from "../src/server/domains/terminal.js";
 
 let dir: string;
 let rootA: string;
@@ -68,6 +69,12 @@ async function makeAuthedApp() {
     command: config.providers.antigravity.command,
   });
   const portPool = new DebugPortPool(config.providers.antigravity.debugPortRange);
+  const terminal = new TerminalService({
+    enabled: config.terminal.enabled,
+    shell: config.terminal.shell,
+    maxTabs: config.terminal.maxTabs,
+    scrollback: config.terminal.scrollback,
+  });
 
   const app = await buildApp({
     config,
@@ -84,6 +91,7 @@ async function makeAuthedApp() {
     antigravity,
     pty,
     portPool,
+    terminal,
     config,
   });
   await app.ready();

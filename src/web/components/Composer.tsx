@@ -1,25 +1,54 @@
 import { useState } from "react";
 import { useSessions } from "../stores/sessions.js";
+import { useFiles } from "../stores/files.js";
 
 export function Composer({ onSlash }: { onSlash: () => void }) {
   const { active, status, sendPrompt, stop } = useSessions();
+  const { contextChips, removeChip } = useFiles();
   const [text, setText] = useState("");
   const disabled = !active;
 
+  function composeWithContext(message: string): string {
+    if (contextChips.length === 0) return message;
+    const ctx = contextChips.map((c) => `@${c.relPath}`).join(" ");
+    return `${ctx}\n\n${message}`;
+  }
+
   return (
     <form
-      className="border-t border-border bg-bg-1 p-2 flex items-end gap-2"
+      className="border-t border-border bg-bg-1 p-2 flex flex-col gap-2"
       onSubmit={async (e) => {
         e.preventDefault();
         if (!text.trim() || disabled) return;
         try {
-          await sendPrompt(text);
+          await sendPrompt(composeWithContext(text));
           setText("");
         } catch {
           /* error surfaced in store */
         }
       }}
     >
+      {contextChips.length > 0 && (
+        <div className="flex flex-wrap gap-1" data-testid="context-chips">
+          {contextChips.map((c) => (
+            <span
+              key={c.path}
+              className="text-[10px] bg-bg-3 rounded px-1.5 py-0.5 font-mono flex items-center gap-1"
+            >
+              {c.relPath}
+              <button
+                type="button"
+                onClick={() => removeChip(c.path)}
+                className="text-fg-2 hover:text-danger"
+                aria-label="remove chip"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="flex items-end gap-2">
       <button
         type="button"
         onClick={onSlash}
@@ -64,6 +93,7 @@ export function Composer({ onSlash }: { onSlash: () => void }) {
         >
           Stop
         </button>
+      </div>
       </div>
     </form>
   );

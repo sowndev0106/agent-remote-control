@@ -5,6 +5,8 @@ import { useSessions } from "../stores/sessions.js";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onOpenFiles?: () => void;
+  onOpenTerminal?: () => void;
 }
 
 interface PaletteCmd {
@@ -15,7 +17,12 @@ interface PaletteCmd {
   run: () => void;
 }
 
-export function SlashCommandPalette({ open, onOpenChange }: Props) {
+export function SlashCommandPalette({
+  open,
+  onOpenChange,
+  onOpenFiles,
+  onOpenTerminal,
+}: Props) {
   const navigate = useNavigate();
   const { stop, newConversation, active } = useSessions();
   const close = () => onOpenChange(false);
@@ -28,8 +35,8 @@ export function SlashCommandPalette({ open, onOpenChange }: Props) {
     { id: "project", label: "/project", hint: "Switch project",
       enabled: true, run: () => { navigate("/"); close(); } },
     { id: "files", label: "/files",
-      hint: "Open file explorer (sprint 06)",
-      enabled: false, run: () => { close(); } },
+      hint: "Open file explorer",
+      enabled: !!onOpenFiles, run: () => { onOpenFiles?.(); close(); } },
     { id: "open", label: "/open", hint: "Open file (sprint 06)",
       enabled: false, run: () => { close(); } },
     { id: "provider", label: "/provider", hint: "Switch provider",
@@ -43,8 +50,8 @@ export function SlashCommandPalette({ open, onOpenChange }: Props) {
     { id: "actions", label: "/actions", hint: "Show available actions",
       enabled: !!active, run: () => { close(); } },
     { id: "terminal", label: "/terminal",
-      hint: "Open terminal panel (sprint 06)",
-      enabled: false, run: () => { close(); } },
+      hint: "Open terminal panel",
+      enabled: !!onOpenTerminal, run: () => { onOpenTerminal?.(); close(); } },
     { id: "settings", label: "/settings", hint: "Open settings",
       enabled: true, run: () => { navigate("/settings"); close(); } },
   ];

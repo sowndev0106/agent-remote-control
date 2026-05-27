@@ -11,7 +11,10 @@ import { registerProviderRoutes } from "./providers.js";
 import { registerSessionRoutes } from "./sessions.js";
 import { registerAdapterRoutes } from "./adapter-routes.js";
 import { registerPtyRoutes } from "./pty-routes.js";
+import { registerFilesRoutes } from "./files-routes.js";
+import { registerTerminalRoutes } from "./terminal-routes.js";
 import type { DebugPortPool } from "../ipc/wire.js";
+import type { TerminalService } from "../domains/terminal.js";
 
 export interface DomainDeps {
   projects: ProjectStore;
@@ -21,6 +24,7 @@ export interface DomainDeps {
   antigravity: AntigravityCdpAdapter;
   pty: AntigravityPtyAdapter;
   portPool: DebugPortPool;
+  terminal: TerminalService;
   config: AppConfig;
 }
 
@@ -42,5 +46,10 @@ export function registerDomainRoutes(app: AppInstance, deps: DomainDeps): void {
     projects: deps.projects,
     sessions: deps.sessions,
     portPool: deps.portPool,
+  });
+  registerFilesRoutes(app, { projects: deps.projects, config: deps.config });
+  registerTerminalRoutes(app, {
+    terminal: deps.terminal,
+    projects: deps.projects,
   });
 }

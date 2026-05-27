@@ -17,11 +17,13 @@ import { tryBind } from "./core/port-check.js";
 import { assertBindAllowed, bindBanner } from "./core/bind-guard.js";
 import { RealtimeBus } from "./core/realtime/bus.js";
 import { mountRealtimeWS } from "./core/realtime/ws.js";
+import { mountTerminalWS } from "./core/realtime/terminal-ws.js";
 import { AntigravityCdpAdapter } from "./adapters/antigravity/index.js";
 import { AntigravityPtyAdapter } from "./adapters/antigravity/pty.js";
 import { AntigravityWrapperAdapter } from "./adapters/antigravity/wrapper.js";
 import { DebugPortPool, startIpcServer } from "./ipc/wire.js";
 import type { IpcServer } from "./ipc/server.js";
+import { TerminalService } from "./domains/terminal.js";
 
 export async function startServer(): Promise<void> {
   const configPath = configFile();
@@ -60,6 +62,12 @@ export async function startServer(): Promise<void> {
   });
   const wrapper = new AntigravityWrapperAdapter({ sessions: sessionsLite, bus });
   const portPool = new DebugPortPool(config.providers.antigravity.debugPortRange);
+  const terminal = new TerminalService({
+    enabled: config.terminal.enabled,
+    shell: config.terminal.shell,
+    maxTabs: config.terminal.maxTabs,
+    scrollback: config.terminal.scrollback,
+  });
 
   const app = await buildApp({ config, configPath, secret, sessions });
   registerLoginRoutes(app, { config, sessions });
@@ -71,6 +79,7 @@ export async function startServer(): Promise<void> {
     antigravity,
     pty,
     portPool,
+    terminal,
     config,
   });
 
@@ -78,6 +87,7 @@ export async function startServer(): Promise<void> {
   if (banner) process.stderr.write("\n" + banner + "\n\n");
 
   mountRealtimeWS({ app, bus, sessions });
+  mountTerminalWS({ app, sessions, terminal });
 
   // IPC server for wrapper CLI (best-effort; failure must not block HTTP).
   let ipc: IpcServer | null = null;
@@ -97,6 +107,7 @@ export async function startServer(): Promise<void> {
     app.log.info({ signal }, "shutting down");
     // H15 / NFR-013A: only owned PTY children get SIGTERM. Wrapper sessions
     // (owned: false) are left untouched.
+    terminal.shutdown();
     await pty.shutdown();
     await antigravity.shutdown();
     if (ipc) await ipc.stop();

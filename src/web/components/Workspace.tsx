@@ -9,6 +9,9 @@ import { Composer } from "./Composer.js";
 import { ProviderSelector } from "./ProviderSelector.js";
 import { SessionDiscoveryList } from "./SessionDiscoveryList.js";
 import { SlashCommandPalette } from "./SlashCommandPalette.js";
+import { FileExplorer } from "./FileExplorer.js";
+import { FileViewer } from "./FileViewer.js";
+import { TerminalDock } from "./TerminalDock.js";
 import type { ProviderId } from "../stores/types.js";
 
 export function Workspace() {
@@ -17,6 +20,9 @@ export function Workspace() {
   const { active: session } = useSessions();
   const { providers, load: loadProviders } = useProviders();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [showFiles, setShowFiles] = useState(false);
+  const [showTerminal, setShowTerminal] = useState(false);
+  const [showFileViewer, setShowFileViewer] = useState(false);
 
   useEffect(() => {
     void loadProviders();
@@ -58,30 +64,59 @@ export function Workspace() {
           <div className="text-sm font-medium truncate">{active.name}</div>
           <div className="text-[10px] text-fg-2 font-mono truncate">{active.path}</div>
         </div>
-        <div className="md:ml-4">
+        <div className="md:ml-4 flex items-center gap-2">
           <ProviderSelector
             active={activeProvider}
             onSelect={(id) => {
               void setLastProvider(active.id, id);
             }}
           />
+          <div className="flex gap-1 ml-auto md:ml-2">
+            <button
+              type="button"
+              onClick={() => { setShowFiles((v) => !v); setShowFileViewer(true); }}
+              data-testid="toggle-files"
+              className={"text-xs rounded px-2 py-1 border border-border " + (showFiles ? "bg-bg-3" : "bg-bg-2")}
+            >
+              files
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowTerminal((v) => !v)}
+              data-testid="toggle-terminal"
+              className={"text-xs rounded px-2 py-1 border border-border " + (showTerminal ? "bg-bg-3" : "bg-bg-2")}
+            >
+              terminal
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col md:flex-row">
+        {showFiles && <FileExplorer projectId={active.id} />}
         <div className="flex-1 min-w-0 flex flex-col">
-          {!session && (
+          {!session && !showFileViewer && (
             <div className="p-3">
               <SessionDiscoveryList projectId={active.id} />
             </div>
           )}
-          {session && <MirrorTimeline />}
+          {showFileViewer ? (
+            <FileViewer />
+          ) : (
+            session && <MirrorTimeline />
+          )}
+          {showTerminal && <TerminalDock projectId={active.id} />}
           <Composer onSlash={() => setPaletteOpen(true)} />
         </div>
         <ActionPanel />
       </div>
 
-      <SlashCommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <SlashCommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        onOpenFiles={() => { setShowFiles(true); setShowFileViewer(true); }}
+        onOpenTerminal={() => setShowTerminal(true)}
+      />
     </div>
   );
 }
