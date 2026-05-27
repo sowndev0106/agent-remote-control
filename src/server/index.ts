@@ -18,6 +18,10 @@ import { assertBindAllowed, bindBanner } from "./core/bind-guard.js";
 import { RealtimeBus } from "./core/realtime/bus.js";
 import { mountRealtimeWS } from "./core/realtime/ws.js";
 import { AntigravityCdpAdapter } from "./adapters/antigravity/index.js";
+import { AntigravityPtyAdapter } from "./adapters/antigravity/pty.js";
+import { AntigravityWrapperAdapter } from "./adapters/antigravity/wrapper.js";
+import { DebugPortPool, startIpcServer } from "./ipc/wire.js";
+import type { IpcServer } from "./ipc/server.js";
 
 export async function startServer(): Promise<void> {
   const configPath = configFile();
@@ -49,6 +53,13 @@ export async function startServer(): Promise<void> {
     launchTimeoutMs: config.providers.antigravity.launchTimeoutMs,
     snapshotPollMs: config.providers.antigravity.snapshotPollMs,
   });
+  const pty = new AntigravityPtyAdapter({
+    sessions: sessionsLite,
+    bus,
+    command: config.providers.antigravity.command,
+  });
+  const wrapper = new AntigravityWrapperAdapter({ sessions: sessionsLite, bus });
+  const portPool = new DebugPortPool(config.providers.antigravity.debugPortRange);
 
   const app = await buildApp({ config, configPath, secret, sessions });
   registerLoginRoutes(app, { config, sessions });
@@ -58,6 +69,8 @@ export async function startServer(): Promise<void> {
     sessions: sessionsLite,
     bus,
     antigravity,
+    pty,
+    portPool,
     config,
   });
 
@@ -65,11 +78,28 @@ export async function startServer(): Promise<void> {
   if (banner) process.stderr.write("\n" + banner + "\n\n");
 
   mountRealtimeWS({ app, bus, sessions });
+
+  // IPC server for wrapper CLI (best-effort; failure must not block HTTP).
+  let ipc: IpcServer | null = null;
+  try {
+    ipc = await startIpcServer({
+      wrapper,
+      reservePort: async () => portPool.reserve(),
+      releasePort: (p) => portPool.release(p),
+    });
+  } catch (err) {
+    app.log.warn({ err }, "IPC server failed to start; wrapper CLI disabled");
+  }
+
   await app.listen({ host: config.server.host, port: config.server.port });
 
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info({ signal }, "shutting down");
+    // H15 / NFR-013A: only owned PTY children get SIGTERM. Wrapper sessions
+    // (owned: false) are left untouched.
+    await pty.shutdown();
     await antigravity.shutdown();
+    if (ipc) await ipc.stop();
     await app.close();
     process.exit(0);
   };
