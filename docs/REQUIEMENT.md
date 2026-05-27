@@ -5,8 +5,8 @@
 Product requirement draft for Phase 1 MVP.
 
 This file intentionally uses the requested path `docs/REQUIEMENT.md`.
-This is the general requirement document. UI layout details live in
-`docs/design.md`. Frontend behavior details live in `docs/design-frontend.md`.
+This is the general requirement document. UI layout and frontend behavior
+details live in `docs/design-frontend.md`.
 
 ## Goal
 
@@ -24,7 +24,6 @@ providers behind the same provider adapter interface.
 
 ## Source References
 
-- `docs/design.md`
 - `docs/design-frontend.md`
 - `ref-source/remote-control.md`
 - `ref-source/opencode`
@@ -350,16 +349,40 @@ REQ-046: The desktop UI MUST follow an opencode-style workspace layout:
 - terminal panel
 - file explorer panel
 
+REQ-046A: The top bar MUST show selected project, provider selector, provider
+status, attach or launch state, connection indicator, quick command entry, and
+settings.
+
+REQ-046B: The left rail MUST provide access to recent projects, open project,
+sessions, files, terminal, actions, and settings.
+
+REQ-046C: The home screen MUST be a functional launcher with recent projects,
+running or discovered AI sessions, open folder, folder browser, recommendation
+markers, provider availability, and app service status.
+
+REQ-046D: The session sidebar MUST show discovered sessions, active session
+state, source badge, current conversation, recent conversations when scrapeable,
+generation status, and provider capability markers.
+
+REQ-046E: The attach screen MUST show discovered existing sessions before
+Launch New and MUST provide unmanaged external process guidance when detected.
+
 REQ-047: The UI MUST support these states:
 
 - logged out
 - no project selected
 - project selected with no provider session
+- existing sessions discovered
+- unmanaged external terminal session detected
 - connecting to provider
 - provider connected
 - provider disconnected or retrying
 - generation running
 - approval or action pending
+- terminal disabled
+- file explorer disabled
+- file blocked by size or binary detection
+- path blocked by project root protection
 - error with recovery action
 
 REQ-048: The central mirror/timeline MUST support refresh, scroll to bottom,
@@ -370,10 +393,16 @@ REQ-049: The right panel MUST show provider status, project path, launch or
 attach target, CDP port, active model or mode, pending actions, last error,
 adapter logs, terminal count, and selected file metadata when relevant.
 
+REQ-049A: The right panel MUST stay compact and move long logs or long metadata
+into a detail view instead of expanding the whole workspace layout.
+
 REQ-050: The mobile UI MUST use a single-column layout with drawers or tabs for
 project, session, actions, files, and terminal.
 
 REQ-051: Mobile action buttons MUST remain tappable and not depend on hover.
+
+REQ-051A: The UI MUST avoid landing-page or marketing layouts inside the
+authenticated product workspace.
 
 ### Slash Commands
 
