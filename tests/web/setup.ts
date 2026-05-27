@@ -8,13 +8,25 @@ class TestResizeObserver {
   disconnect() {}
 }
 
-beforeEach(() => {
+function installBrowserShims() {
   if (typeof ResizeObserver === "undefined") {
-    vi.stubGlobal("ResizeObserver", TestResizeObserver);
+    globalThis.ResizeObserver = TestResizeObserver as unknown as typeof ResizeObserver;
   }
   if (typeof HTMLElement !== "undefined" && !HTMLElement.prototype.scrollIntoView) {
     HTMLElement.prototype.scrollIntoView = () => {};
   }
+  if (typeof HTMLCanvasElement !== "undefined") {
+    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+      configurable: true,
+      value: () => ({}),
+    });
+  }
+}
+
+installBrowserShims();
+
+beforeEach(() => {
+  installBrowserShims();
 });
 
 afterEach(() => {
