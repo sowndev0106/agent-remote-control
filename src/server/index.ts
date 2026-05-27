@@ -64,8 +64,8 @@ export async function startServer(): Promise<void> {
   const banner = bindBanner(config);
   if (banner) process.stderr.write("\n" + banner + "\n\n");
 
-  await app.listen({ host: config.server.host, port: config.server.port });
   mountRealtimeWS({ app, bus, sessions });
+  await app.listen({ host: config.server.host, port: config.server.port });
 
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info({ signal }, "shutting down");
