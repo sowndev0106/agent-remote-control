@@ -58,6 +58,34 @@ export async function buildApp(deps: BuildAppDeps) {
     parseOptions: {},
   });
 
+  // Strict app-shell security headers (NFR-002, S08-T10). The mirror iframe
+  // uses srcdoc + sandbox="" with its own baseline; the shell CSP is never
+  // relaxed. Tailwind compiles to classes so no 'unsafe-inline' is needed.
+  app.addHook("onSend", async (req, reply, payload) => {
+    const path = req.url.split("?")[0] ?? req.url;
+    // Only set the HTML CSP on document responses, not JSON/assets.
+    if (!path.startsWith("/api/")) {
+      reply.header(
+        "Content-Security-Policy",
+        [
+          "default-src 'self'",
+          "script-src 'self'",
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob:",
+          "connect-src 'self' ws: wss:",
+          "frame-src 'self'",
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+        ].join("; "),
+      );
+    }
+    reply.header("X-Content-Type-Options", "nosniff");
+    reply.header("X-Frame-Options", "SAMEORIGIN");
+    reply.header("Referrer-Policy", "same-origin");
+    return payload;
+  });
+
   app.setErrorHandler((err, req, reply) => {
     if (err instanceof AppError) {
       reply.code(err.httpStatus).send(errEnvelope(err));

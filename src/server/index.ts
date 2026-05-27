@@ -1,10 +1,12 @@
 import {
+  configDir,
   configFile,
   projectsFile,
   secretFile,
   sessionsFile,
 } from "../cli/paths.js";
 import { loadConfig } from "./core/config.js";
+import { auditPermissions } from "./core/perms-audit.js";
 import { ensureSecretKey } from "./core/secret-key.js";
 import { SessionStore } from "./core/session.js";
 import { buildApp } from "./core/app.js";
@@ -108,6 +110,12 @@ export async function startServer(): Promise<void> {
     discovery,
     config,
   });
+
+  // Permission audit (S08-T07 / H13): fix 0700 dir + 0600 files in place.
+  await auditPermissions(
+    { dir: configDir(), files: [configFile(), secretFile(), sessionsFile(), projectsFile()] },
+    app.log,
+  );
 
   const banner = bindBanner(config);
   if (banner) process.stderr.write("\n" + banner + "\n\n");

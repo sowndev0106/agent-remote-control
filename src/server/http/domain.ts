@@ -13,6 +13,7 @@ import { registerAdapterRoutes } from "./adapter-routes.js";
 import { registerPtyRoutes } from "./pty-routes.js";
 import { registerFilesRoutes } from "./files-routes.js";
 import { registerTerminalRoutes } from "./terminal-routes.js";
+import { registerConfigRoutes } from "./config-routes.js";
 import type { DebugPortPool } from "../ipc/wire.js";
 import type { TerminalService } from "../domains/terminal.js";
 import type { SessionDiscoveryAggregator } from "../domains/discovery.js";
@@ -36,6 +37,7 @@ export function registerDomainRoutes(app: AppInstance, deps: DomainDeps): void {
     configuredRoots: deps.config.projects.roots,
   });
   registerProviderRoutes(app, { providers: deps.providers });
+  registerConfigRoutes(app, { config: deps.config });
   registerSessionRoutes(app, { sessions: deps.sessions });
   registerAdapterRoutes(app, {
     antigravity: deps.antigravity,
