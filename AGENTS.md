@@ -16,6 +16,7 @@ Source of truth, in priority order. When in conflict, the higher entry wins:
 |---|---|---|
 | [docs/REQUIEMENT.md](docs/REQUIEMENT.md) | Product requirements (REQ-* and NFR-* IDs, AC-* acceptance criteria) | Before any task — quote REQ IDs in PRs |
 | [docs/design-frontend.md](docs/design-frontend.md) | Frontend state model, components, routes, security rules | Before any UI task |
+| [docs/architecture.md](docs/architecture.md) | Module map, adapter model, API/realtime contracts, persistence, security, pre-flight decisions | Before any backend task or when wiring a new module |
 | [docs/sprints/README.md](docs/sprints/README.md) | Sprint plan, dependency graph, execution order | Before starting work |
 | [docs/sprints/sprint-NN-*.md](docs/sprints/) | Per-sprint goal, tasks (`S<NN>-T<n>`), acceptance, done definition | When picking up a sprint |
 
@@ -150,17 +151,25 @@ These are invariants drawn from `docs/REQUIEMENT.md`. Most are NFRs — easy to 
 
 ## Proposed Tech Stack
 
-Not yet committed in code; finalize during sprint 01. Use these defaults unless you have a concrete reason to diverge:
+Defaults below. Several choices are now **locked** by
+[architecture.md §22 Sprint 01 Pre-flight Decisions](docs/architecture.md#22-sprint-01-pre-flight-decisions) —
+read that section before changing module system, hash algorithm, secret
+storage, persistence envelope, or logger.
 
 | Layer | Choice |
 |---|---|
 | Runtime | Node.js 20+ |
-| Language | TypeScript |
+| Language | TypeScript — ESM, `NodeNext`, `ES2022`, strict (locked, §22.4) |
+| Repo layout | Single root `package.json` (locked, §22.7) |
 | HTTP framework | Fastify |
+| Logger | Pino via Fastify default (locked, §22.6) |
 | WebSocket | `ws` |
 | PTY | `node-pty` |
-| CDP client | raw WS or `chrome-remote-interface` |
-| Password hashing | `argon2` (fallback `bcrypt`) |
+| CDP client | raw WS or `chrome-remote-interface` (open — sprint 03 Q3) |
+| Password hashing | Argon2id → bcrypt fallback → PBKDF2 opt-in (locked, §22.2) |
+| First-run password | CLI prompt in `install`, `@inquirer/prompts` (locked, §22.1) |
+| Cookie secret | `~/.config/agent-remote-control/secret.key` (locked, §22.3) |
+| Persistence envelope | `{ version: number, data: T }` from day one (locked, §22.5) |
 | DOM sanitization | `DOMPurify` + `jsdom` |
 | Atomic JSON | `proper-lockfile` + write-temp-then-rename |
 | Frontend | React 18 + Vite |
@@ -168,7 +177,7 @@ Not yet committed in code; finalize during sprint 01. Use these defaults unless 
 | Terminal renderer | xterm.js + `xterm-addon-fit` |
 | Styling | Tailwind CSS |
 | Slash palette | `cmdk` |
-| Tests | Vitest (frontend), Node's built-in `node:test` or Vitest (backend) |
+| Tests | Vitest (frontend), Vitest or `node:test` (backend) |
 
 ## Code Conventions
 

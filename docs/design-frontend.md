@@ -2,7 +2,7 @@
 
 ## Status
 
-Frontend behavior design draft for Phase 1 MVP.
+Frontend behavior design draft for the Phase 1 Antigravity Complete release.
 
 This document focuses on frontend state, interactions, UI features, realtime
 data flow, and component responsibilities. General product requirements live in
@@ -15,8 +15,25 @@ workspace. It should hide provider details behind capabilities and expose one
 consistent user experience for project selection, Antigravity control, files,
 terminal, slash commands, and status.
 
-Phase 1 enables Antigravity only. Claude, Codex, and opencode are represented
-as future providers so the UI shape is ready for them.
+Phase 1 fully enables Antigravity before any other provider is implemented.
+Claude, Codex, and opencode are represented as future providers so the UI shape
+is ready for them, but their disabled states must not add complexity to the
+Antigravity workflow.
+
+## Antigravity Complete Scope
+
+The frontend must treat Antigravity as a complete provider, not only as a CDP
+mirror. It must expose UI paths for:
+
+- CDP discovery, launch, attach, mirror, prompt, stop, and action relay
+- app-managed PTY Antigravity sessions
+- wrapper-launched Antigravity sessions
+- configured tmux/screen attach for Antigravity terminal sessions
+- unmanaged external Antigravity processes with clear guidance instead of false
+  full-control claims
+
+CDP remains the preferred control surface when both CDP and terminal control are
+available for the same session.
 
 ## UI Layout Goal
 
@@ -164,7 +181,8 @@ The default secondary panel is the session or conversation sidebar:
 - new session action
 - discovered sessions
 - active session badge
-- session source badge: CDP, managed PTY, wrapper, or unmanaged
+- session source badge: CDP, managed PTY, wrapper, tmux, screen, or unmanaged
+- attachability badge: controllable, needs configuration, or guidance only
 - current conversation
 - recent conversations when scrapeable
 - generation status per active session
@@ -187,6 +205,7 @@ Discovered session list:
 | Active  Antigravity  CDP  :9000  /project-a    |
 | Idle    Antigravity  CDP  :9001  /project-b    |
 | Busy    Antigravity  PTY  managed /project-c   |
+| Active  Antigravity  tmux dev-agent /project-d |
 | Seen    Antigravity  external unmanaged        |
 +------------------------------------------------+
 | Attach | Launch New                            |
@@ -198,9 +217,12 @@ Session rows should show:
 - provider
 - project path when detectable
 - source type
+- control surface details such as CDP port, PTY ID, wrapper ID, or tmux/screen
+  target when available
 - active or busy state
 - pending action count when detectable
 - attach action when controllable
+- resume action for app-managed PTY or wrapper-launched sessions
 - guidance action when unmanaged
 
 If the user has Antigravity open in an external terminal, the UI can show it as
@@ -234,7 +256,7 @@ File viewer placement:
 - Compact desktop: opens over the main work area in a dismissible panel.
 - Mobile: opens as a full-screen file view with back navigation.
 
-The file explorer is read-only in MVP. Destructive controls are not shown.
+The file explorer is read-only in Phase 1. Destructive controls are not shown.
 
 ## Right Action Panel Layout
 
@@ -312,6 +334,9 @@ shows an attach screen:
 - discovered existing sessions first
 - Attach to running Antigravity action
 - Launch Antigravity action
+- Launch through managed PTY action
+- wrapper command copy/open action
+- tmux/screen attach action when configured
 - unmanaged external process guidance when detected
 - detected CDP port list when available
 - clear troubleshooting status
@@ -383,7 +408,7 @@ The UI should be dense but readable:
 
 ## Routes
 
-MVP routes:
+Phase 1 routes:
 
 - `/login`
 - `/`
@@ -407,6 +432,7 @@ Frontend state should be split by domain:
 - `providers`: provider list, selected provider, capabilities
 - `sessions`: discovered sessions, active provider session, conversations,
   selected conversation
+- `capabilities`: normalized provider and session capability flags
 - `mirror`: snapshot HTML, hash, scroll state, loading state
 - `actions`: pending approvals and detected remote action buttons
 - `terminal`: tabs, active tab, connection state, resize state
@@ -418,10 +444,74 @@ Provider-specific raw data must stay behind adapter-facing API responses. The
 frontend should render provider capabilities, status, actions, and snapshots
 through a normalized shape.
 
+## Frontend Data Contracts
+
+The frontend depends on normalized server contracts rather than raw provider
+details.
+
+Session shape:
+
+```json
+{
+  "sessionId": "session_123",
+  "providerId": "antigravity",
+  "source": "cdp",
+  "projectId": "project_123",
+  "projectPath": "/home/user/project",
+  "status": "connected",
+  "lifecycle": "active",
+  "capabilities": {
+    "mirror": "supported",
+    "prompt": "supported",
+    "stop": "unknown",
+    "actions": "supported",
+    "terminalInput": "unsupported"
+  }
+}
+```
+
+Action shape:
+
+```json
+{
+  "actionId": "action_123",
+  "label": "Allow",
+  "kind": "approval",
+  "state": "available"
+}
+```
+
+Error shape:
+
+```json
+{
+  "code": "cdp_attach_failed",
+  "operation": "Attach Antigravity CDP session",
+  "message": "Could not connect to the selected debug target.",
+  "recoveryAction": "Refresh discovered sessions"
+}
+```
+
+The frontend must submit server-issued IDs for sessions and actions. It must not
+construct CDP selectors, filesystem paths outside project APIs, or provider raw
+commands from UI state.
+
 ## Realtime Channels
 
 The frontend uses normal HTTP for commands and WebSocket or SSE for realtime
 updates.
+
+Realtime messages use one envelope:
+
+```json
+{
+  "type": "provider.status.changed",
+  "projectId": "project_123",
+  "sessionId": "session_123",
+  "version": 1,
+  "payload": {}
+}
+```
 
 Realtime event groups:
 
@@ -513,7 +603,8 @@ Project picker behavior:
 - browse folders lazily
 - search visible folder names
 - show project recommendation markers
-- allow any readable folder
+- allow any readable folder inside configured roots, plus explicit manual path
+  confirmation for validated folders outside configured roots
 - save selected folder through server API
 - switch workspace to selected project
 
@@ -536,9 +627,11 @@ Antigravity session behavior:
 
 - detect all running debug targets
 - detect app-managed PTY or wrapper-launched sessions
+- detect configured tmux/screen Antigravity sessions
 - best-effort detect unmanaged external terminal processes
 - show discovered sessions before launch
 - show attach option when target exists
+- show resume option for app-managed PTY and wrapper-launched sessions
 - show launch option when target does not exist
 - show active badge when generation, focus, pending action, or recent activity
   can be detected
@@ -555,7 +648,9 @@ Discovered session behavior:
 - run discovery from the home screen before project selection
 - request discovered sessions for the selected project and provider
 - list every controllable Antigravity CDP target, not only the first target
-- include app-managed terminal provider sessions when available
+- include app-managed terminal provider sessions
+- include wrapper-launched Antigravity sessions
+- include configured tmux/screen Antigravity sessions
 - show external unmanaged terminal processes separately when detectable
 - mark likely active sessions
 - let the user attach to a controllable session without restarting it
@@ -568,6 +663,8 @@ Session source labels:
 - `CDP`
 - `Managed PTY`
 - `Wrapper`
+- `tmux`
+- `screen`
 - `External unmanaged`
 
 Attach behavior:
@@ -575,6 +672,8 @@ Attach behavior:
 - attaching to a CDP session loads its current snapshot
 - attaching to an app-managed PTY session reconnects terminal output and input
 - attaching to a wrapper-launched session resumes the registered provider bridge
+- attaching to a tmux/screen session connects to the configured terminal control
+  surface
 - unmanaged external terminal sessions show guidance instead of an Attach
   control
 
@@ -695,8 +794,8 @@ Terminal dock behavior:
 Terminal session behavior:
 
 - new tab starts in selected project directory
-- provider commands started from app-managed terminal tabs are eligible for
-  future managed-session sync
+- Antigravity commands started from app-managed terminal tabs are registered as
+  managed sessions when they match configured provider launch patterns
 - frontend connects to authenticated terminal WebSocket
 - keyboard input streams to backend PTY
 - backend output streams to terminal renderer
@@ -717,6 +816,8 @@ Settings sections:
 - file explorer options
 - terminal enabled/disabled and shell override
 - Antigravity command and debug ports
+- Antigravity wrapper commands
+- tmux/screen attach targets
 - provider list
 
 Risky settings, such as binding `0.0.0.0`, must show explicit warnings before
@@ -734,6 +835,9 @@ Frontend error categories:
 - no controllable existing session found
 - unmanaged external terminal session detected
 - CDP attach failed
+- managed PTY resume failed
+- wrapper session registration failed
+- tmux/screen attach failed
 - snapshot stale
 - remote action failed
 - terminal WebSocket failed
@@ -768,7 +872,7 @@ Each error should include:
 
 ## Frontend Test Coverage
 
-MVP frontend tests should cover:
+Phase 1 frontend tests should cover:
 
 - login required before workspace access
 - project picker and recent project selection
@@ -776,7 +880,11 @@ MVP frontend tests should cover:
 - attach/launch state transitions
 - discovered session list and attach flow
 - unmanaged external terminal guidance
+- managed PTY session resume flow
+- wrapper-launched session registration and resume flow
+- configured tmux/screen attach flow
 - mirror snapshot render and refresh
+- server-issued action ID submission
 - slash command palette filtering
 - terminal tab create/switch/close
 - terminal WebSocket auth failure display
@@ -792,6 +900,21 @@ Frontend design is complete when:
 - every Phase 1 requirement has a visible UI path
 - unsupported future providers are visible but cannot be used
 - terminal and file explorer behave as first-class workspace tools
-- Antigravity CDP state is understandable from the UI
+- Antigravity CDP, managed PTY, wrapper, and configured tmux/screen states are
+  understandable from the UI
 - mobile users can complete the main remote-control workflow
 - no frontend feature bypasses server auth or project-root checks
+
+## Requirement Coverage Map
+
+- Auth and route protection: REQ-010 through REQ-014D, NFR-001.
+- Project selection and recent projects: REQ-015 through REQ-021.
+- Provider selection and capability display: REQ-022 through REQ-026C.
+- Existing Antigravity session discovery and sync: REQ-092 through REQ-107.
+- Antigravity CDP, PTY, wrapper, and tmux/screen control: REQ-027 through
+  REQ-045E.
+- Workspace layout and responsive states: REQ-046 through REQ-051A.
+- Slash commands: REQ-052 through REQ-055.
+- Terminal UI: REQ-056 through REQ-070.
+- File explorer UI: REQ-071 through REQ-087A.
+- Backend API and realtime client contracts: REQ-108 through REQ-115.

@@ -6,7 +6,7 @@
 
 ## Goal
 
-Add the second Antigravity control surface: app-managed PTY sessions and the
+Add the Phase 1B Antigravity control surfaces: app-managed PTY sessions and the
 `antigravity` / `agy` wrapper command. After this sprint, users who launch
 Antigravity through the app can resume the session from the browser even
 after reloads.
@@ -50,7 +50,8 @@ in sprint 07.
 - `src/cli/antigravity.ts` — implements `agent-remote-control antigravity`
   and `agent-remote-control agy` (alias).
 - IPC channel for wrapper → server: Unix socket at
-  `~/.config/agent-remote-control/ipc.sock` with 0600 permissions.
+  `~/.config/agent-remote-control/ipc.sock` inside the 0700 config directory,
+  plus a server-issued local registration nonce.
 - HTTP endpoints:
   - `POST /api/sessions/pty/launch`
   - `POST /api/sessions/:id/pty/input`
@@ -84,9 +85,12 @@ in sprint 07.
     reconnecting to a PTY stream. If the wrapper CLI is killed but
     Antigravity (Electron, detached) keeps running, the CDP session stays
     valid.
-- **S05-T05** IPC socket server: accept connections from same UID only,
-  exposing a tiny RPC for `reserve-port`, `register-session`,
-  `unregister-session`. Reject if peer UID differs.
+- **S05-T05** IPC socket server: expose a tiny RPC for `reserve-port`,
+  `register-session`, and `unregister-session`. Authenticate wrapper clients
+  with a server-issued local registration nonce stored in the user-owned config
+  directory. Do not assume Node.js `net` exposes Linux peer credentials; if a
+  stronger same-UID check is required, add a tiny native helper/addon around
+  `SO_PEERCRED` as a separate implementation decision.
 - **S05-T06** Session resume (REQ-045C, NFR-012):
   - Session registry survives in JSON (PID, port, project, created).
   - On server restart, validate PID still alive, port still reachable; mark
@@ -107,6 +111,7 @@ in sprint 07.
   - Resume action button when applicable.
 - **S05-T10** Tests:
   - Wrapper command registers session; browser sees it; CDP attach works.
+  - Wrapper command with a missing or invalid registration nonce is rejected.
   - Reload server → resume returns the same session.
   - Kill server forcefully → owned PTY children terminated; non-owned
     Antigravity launched outside wrapper stays alive.
@@ -118,8 +123,10 @@ in sprint 07.
   managed-PTY session and a CDP discovery both find the same PID, merge
   them into one session record with `source: managed-pty` and CDP
   capabilities present.
-- **IPC socket security:** Always validate peer UID (`getsockopt SO_PEERCRED`
-  on Linux). The Node.js `net` module exposes this; use it.
+- **IPC socket security:** The primary control is a 0700 config directory,
+  narrow socket permissions where supported, and a server-issued local
+  registration nonce. Native peer UID verification is optional hardening, not a
+  dependency on an undocumented Node.js API.
 - **Wrapper exit semantics:** If the user Ctrl+C's the wrapper but
   Antigravity is still running (Electron app detached), document this — the
   session stays registered until Antigravity exits.

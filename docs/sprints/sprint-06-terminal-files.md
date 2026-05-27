@@ -5,6 +5,10 @@
 **Dependencies:** Sprint 01, 02, 04
 
 Can run in parallel with sprint 05 (different files, no shared state).
+Generic browser terminal tabs are project shells only. They do **not**
+auto-register Antigravity sessions when a user types `antigravity`; managed
+Antigravity PTY launch and registration stay in sprint 05 unless a later design
+explicitly adds terminal-command detection.
 
 ## Goal
 
@@ -22,7 +26,10 @@ real PTYs, and a read-only project file explorer with preview.
 
 - Editing files (Phase 1 is read-only, REQ-085)
 - File watching for real-time refresh (deferred to Phase 2)
-- Antigravity-as-PTY (sprint 05 — different code path from generic terminal)
+- Antigravity-as-PTY registration (sprint 05 — different code path from generic
+  terminal). A plain `antigravity` command typed into a generic terminal tab is
+  just terminal output unless sprint 05 deliberately exposes a managed launch
+  action.
 
 ## Acceptance Criteria
 
@@ -60,7 +67,8 @@ real PTYs, and a read-only project file explorer with preview.
 ### Terminal
 - **S06-T01** Backend PTY pool: per-tab `node-pty.spawn` with `$SHELL` (or
   `/bin/bash` fallback), cwd = selected project root. Honor
-  `terminal.maxTabs`.
+  `terminal.maxTabs`. These generic tabs do not auto-register provider
+  sessions.
 - **S06-T02** WS bridge with cookie auth. Reject unauthenticated upgrades
   (AC-025).
 - **S06-T03** Output buffering: small ring buffer (~`scrollback` lines) so

@@ -6,7 +6,7 @@
 
 ## Goal
 
-Build the React SPA: opencode-style workspace layout, login page, project
+Build the Phase 1A React SPA: opencode-style workspace layout, login page, project
 picker, provider selector, mirror renderer, action panel, composer with slash
 commands, and responsive states for desktop + mobile.
 
@@ -72,10 +72,15 @@ cycle:
 ## Tasks
 
 - **S04-T01** Vite + React 18 + TS scaffold. Tailwind. Route setup.
-- **S04-T02** API client with CSRF token handling, normalized error envelope.
+- **S04-T02** API client with CSRF token handling and canonical command
+  envelope parsing for both success and failure:
+  `{ok: true, data, error: null}` and `{ok: false, data: null, error}`.
+  Reject any response that does not match the envelope so backend drift is
+  caught during UI tests.
 - **S04-T03** WS client: connect with session cookie, dispatch envelope
   events to Zustand stores by `type` prefix (`provider.*`, `session.*`,
-  `auth.*`, etc.).
+  `auth.*`, etc.). Event names come from the server event catalog introduced
+  in sprint 03.
 - **S04-T04** Zustand stores: `auth`, `projects`, `providers`, `sessions`,
   `capabilities`, `mirror`, `actions`, `settings`, `ui`. Each store
   ≤ 200 LOC; pure selectors.
@@ -92,7 +97,9 @@ cycle:
   sanitized snapshot. Scroll preservation when not near bottom. Refresh +
   scroll-to-bottom controls. Overlay states (connecting, retrying, stale).
 - **S04-T11** Remote action wiring — read `actions` store, render clickable
-  overlays on mirror buttons by stable action ID. Optimistic pending state.
+  overlays on mirror buttons by stable server-issued action ID. Optimistic
+  pending state. The frontend never submits selectors, DOM paths, raw button
+  text, occurrence indexes, or provider commands.
 - **S04-T12** `ActionPanel` — provider status, port, mode/model, pending
   approvals, last error, adapter logs (compact, with detail expand).
 - **S04-T13** `Composer` — multiline input, send + stop, file context chips
@@ -140,6 +147,9 @@ cycle:
   attach, see live mirror, send a prompt, click an action button, stop
   generation, and switch conversations — all from the browser, desktop or
   mobile.
+- Phase 1B surfaces (managed PTY, wrapper, tmux/screen, terminal, files) are
+  represented as disabled or placeholder states where needed, but they do not
+  block the Phase 1A CDP workflow.
 - No marketing or hero sections appear anywhere in the authenticated app.
 - Sandboxed mirror cannot break out into the app shell (verified via XSS
   smoke test using a crafted snapshot).

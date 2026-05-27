@@ -21,7 +21,8 @@ remote action click. Most of this code is ported from
   sprint 05, tmux/screen + unmanaged in sprint 07. The `discover` endpoint
   built here returns CDP results; later sprints extend it to aggregate other
   sources behind the same endpoint.
-- REQ-113, REQ-114 (snapshot hash, server-issued action IDs)
+- REQ-109 through REQ-114 (normalized errors, realtime envelope, snapshot
+  hash, server-issued action IDs)
 - NFR-003, NFR-004 (DOM sanitization)
 
 ## Out of Scope
@@ -54,6 +55,8 @@ remote action click. Most of this code is ported from
   index logic (port from POC).
 - `src/server/adapters/antigravity/launch.ts` — spawn Antigravity with
   `--remote-debugging-port`.
+- `src/server/core/realtime/events.ts` — canonical event type catalogue before
+  any provider WS emitter ships.
 - HTTP routes:
   - `POST /api/sessions/discover?provider=antigravity`
   - `POST /api/sessions/launch` (project + provider)
@@ -73,6 +76,13 @@ remote action click. Most of this code is ported from
 
 ## Tasks
 
+- **S03-T00** CDP preflight validation before porting POC code:
+  - Detect installed Antigravity command from config.
+  - Launch or inspect a test target with `--remote-debugging-port=<port>`.
+  - Verify `/json` exposes a workbench-like target that can be attached.
+  - If the installed build does not support this path, stop the sprint and
+    update `docs/REQUIEMENT.md` / `docs/architecture.md`; do not silently
+    implement a fake CDP adapter.
 - **S03-T01** Port `discoverCDP` from POC, generalize to scan
   `providers.antigravity.debugPortRange`. Return all targets (REQ-029A), not
   the first.
@@ -96,6 +106,10 @@ remote action click. Most of this code is ported from
   - Scan sanitized snapshot for action button candidates.
   - Generate stable action IDs from `{tag, text, occurrenceIndex}`.
   - Store mapping server-side; client only submits action ID.
+- **S03-T08B** Action ID API audit: add a route-level test proving no CDP
+  action endpoint accepts selectors, DOM paths, button text, occurrence
+  indexes, or provider raw commands from the client. The only accepted remote
+  action input is `:actionId`.
 - **S03-T09** Port targeting layer for click relay:
   - Leaf-node filter (POC's "Leaf-Most" logic).
   - Resolve action ID → CDP selector → dispatch click.
@@ -117,7 +131,9 @@ remote action click. Most of this code is ported from
   container. Never auto-sync desktop → web scroll.
 - **S03-T14** Error normalization (REQ-109, REQ-110): every adapter failure
   returns `{code, operation, message, recoveryAction}`.
-- **S03-T15** WebSocket realtime envelope (REQ-111): emit
+- **S03-T15** Realtime event catalog + WebSocket envelope (REQ-111): define
+  legal event names in `src/server/core/realtime/events.ts` before emitters
+  spread, then emit
   `provider.snapshot.changed`, `provider.status.changed`,
   `provider.actions.changed` events with `{type, sessionId, version, payload}`.
 - **S03-T16** Multi-session support: each discovered CDP target gets its own
@@ -140,6 +156,8 @@ remote action click. Most of this code is ported from
 
 - With Antigravity launched manually (`antigravity . --remote-debugging-port=9000`),
   `POST /api/sessions/discover` returns the target.
+- CDP preflight records whether the installed Antigravity build supports the
+  debug target shape this sprint depends on.
 - After attach, `GET /api/sessions/:id/snapshot` returns sanitized HTML.
 - `POST /api/sessions/:id/prompt` causes a new user message to appear in the
   desktop Antigravity window.

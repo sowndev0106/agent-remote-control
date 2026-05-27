@@ -6,10 +6,11 @@
 
 ## Goal
 
-Lock the API + realtime contracts to the exact shapes specified in
-REQUIEMENT.md, finalize JSON persistence with atomic writes and correct
-permissions, and run a security hardening pass to satisfy every NFR before
-calling Phase 1 done.
+Re-audit the API + realtime contracts introduced in sprints 01 and 03, verify
+JSON persistence uses the sprint 01 atomic helper everywhere, and run the final
+security hardening pass to satisfy every NFR before calling full Phase 1 done.
+This sprint verifies and tightens cross-cutting primitives; it must not be the
+first implementation of envelopes, route auth, event catalogs, or atomic writes.
 
 ## In-Scope Requirements
 
@@ -37,13 +38,13 @@ calling Phase 1 done.
 
 ## Deliverables
 
-- Audited API surface: every command endpoint returns
+- Re-audited API surface: every command endpoint returns
   `{ok: true, data} | {ok: false, error: {...}}` per REQ-109/110.
-- Audited realtime envelope: every WS message conforms to
+- Re-audited realtime envelope: every WS message conforms to
   `{type, projectId?, sessionId?, version, payload}` per REQ-111.
-- `src/server/core/persistence.ts` finalized: atomic writes (`proper-lockfile`
-  or write-temp-then-rename), 0600 file modes, parent-dir creation, schema
-  versioning.
+- `src/server/core/persistence.ts` verified everywhere: atomic writes
+  (`proper-lockfile` or write-temp-then-rename), 0600 file modes, parent-dir
+  creation, schema versioning.
 - Security audit checklist filled out (see Tasks).
 - Performance smoke check (snapshot poll, file tree, terminal interactivity).
 
@@ -51,10 +52,12 @@ calling Phase 1 done.
 
 ### API + Realtime Contract Audit
 - **S08-T01** Walk every HTTP endpoint added across sprints 01..07. Verify
-  response shape matches REQ-109 envelope. Fix drift.
+  each route uses the sprint 01 envelope helper and response shape matches
+  REQ-109. Fix drift.
 - **S08-T02** Walk every WS message emission. Verify envelope and the event
-  type taxonomy (REQ-111). Catalog all `type` values in a single
-  `src/server/core/realtime/events.ts` so they cannot drift again.
+  type taxonomy (REQ-111) against the sprint 03
+  `src/server/core/realtime/events.ts` catalog. Add missing types to the
+  catalog only after confirming they are required by REQ-112.
 - **S08-T03** Verify REQ-112 coverage — at least one event for each:
   auth expiration, project registry changes, provider status, session
   discovery, snapshot updates, pending actions, adapter logs, terminal
@@ -65,9 +68,9 @@ calling Phase 1 done.
   selectors from the client. Reject and refactor.
 
 ### Persistence
-- **S08-T06** Atomic write helper used by every persistence call: write to
-  `<file>.tmp.<pid>.<ts>`, fsync, rename. Wrap in `proper-lockfile` for
-  multi-writer safety.
+- **S08-T06** Verify the sprint 01 atomic write helper is used by every
+  persistence call: write to `<file>.tmp.<pid>.<ts>`, fsync, rename. Wrap in
+  `proper-lockfile` for multi-writer safety.
 - **S08-T07** Enforce 0600 on every persisted file. Enforce 0700 on the
   config directory. Run audit on startup; fix permissions if wrong (warn,
   don't crash).
