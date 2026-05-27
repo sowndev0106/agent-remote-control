@@ -17,6 +17,8 @@ import { ProviderRegistry } from "../src/server/domains/providers.js";
 import { SessionStoreLite } from "../src/server/domains/sessions.js";
 import { RealtimeBus } from "../src/server/core/realtime/bus.js";
 import { AntigravityCdpAdapter } from "../src/server/adapters/antigravity/index.js";
+import { AntigravityPtyAdapter } from "../src/server/adapters/antigravity/pty.js";
+import { DebugPortPool } from "../src/server/ipc/wire.js";
 
 let dir: string;
 let rootA: string;
@@ -60,6 +62,12 @@ async function makeAuthedApp() {
     launchTimeoutMs: 500,
     snapshotPollMs: 60_000,
   });
+  const pty = new AntigravityPtyAdapter({
+    sessions: sessionsLite,
+    bus,
+    command: config.providers.antigravity.command,
+  });
+  const portPool = new DebugPortPool(config.providers.antigravity.debugPortRange);
 
   const app = await buildApp({
     config,
@@ -74,6 +82,8 @@ async function makeAuthedApp() {
     sessions: sessionsLite,
     bus,
     antigravity,
+    pty,
+    portPool,
     config,
   });
   await app.ready();

@@ -4,11 +4,14 @@ import { ProjectStore } from "../domains/projects.js";
 import { ProviderRegistry } from "../domains/providers.js";
 import { SessionStoreLite } from "../domains/sessions.js";
 import { AntigravityCdpAdapter } from "../adapters/antigravity/index.js";
+import { AntigravityPtyAdapter } from "../adapters/antigravity/pty.js";
 import { RealtimeBus } from "../core/realtime/bus.js";
 import { registerProjectRoutes } from "./projects.js";
 import { registerProviderRoutes } from "./providers.js";
 import { registerSessionRoutes } from "./sessions.js";
 import { registerAdapterRoutes } from "./adapter-routes.js";
+import { registerPtyRoutes } from "./pty-routes.js";
+import type { DebugPortPool } from "../ipc/wire.js";
 
 export interface DomainDeps {
   projects: ProjectStore;
@@ -16,6 +19,8 @@ export interface DomainDeps {
   sessions: SessionStoreLite;
   bus: RealtimeBus;
   antigravity: AntigravityCdpAdapter;
+  pty: AntigravityPtyAdapter;
+  portPool: DebugPortPool;
   config: AppConfig;
 }
 
@@ -30,5 +35,12 @@ export function registerDomainRoutes(app: AppInstance, deps: DomainDeps): void {
     antigravity: deps.antigravity,
     projects: deps.projects,
     sessions: deps.sessions,
+  });
+  registerPtyRoutes(app, {
+    pty: deps.pty,
+    cdp: deps.antigravity,
+    projects: deps.projects,
+    sessions: deps.sessions,
+    portPool: deps.portPool,
   });
 }

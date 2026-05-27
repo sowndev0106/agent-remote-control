@@ -5,6 +5,7 @@ import { runStop } from "./stop.js";
 import { runStatus } from "./status.js";
 import { runOpen } from "./open.js";
 import { runConfig } from "./config.js";
+import { runAntigravityWrapper } from "./antigravity.js";
 
 export async function main(argv: string[] = process.argv): Promise<void> {
   const program = new Command();
@@ -56,6 +57,21 @@ export async function main(argv: string[] = process.argv): Promise<void> {
     .action(async (opts) => {
       await runConfig(opts);
     });
+
+  // Wrapper commands: `antigravity <project>` and its `agy` alias.
+  const wrap = (cmd: string) =>
+    program
+      .command(`${cmd} <project>`)
+      .description(
+        cmd === "antigravity"
+          ? "Launch Antigravity for <project> and register it with the local server"
+          : "Alias for `antigravity`",
+      )
+      .action(async (project: string) => {
+        await runAntigravityWrapper({ project });
+      });
+  wrap("antigravity");
+  wrap("agy");
 
   await program.parseAsync(argv);
 }

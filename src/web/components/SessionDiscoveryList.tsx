@@ -1,6 +1,15 @@
 import { useEffect } from "react";
 import { useSessions } from "../stores/sessions.js";
 
+const SOURCE_LABELS: Record<string, string> = {
+  cdp: "CDP",
+  "managed-pty": "Managed PTY",
+  wrapper: "Wrapper",
+  tmux: "tmux",
+  screen: "screen",
+  unmanaged: "External",
+};
+
 export function SessionDiscoveryList({ projectId }: { projectId: string }) {
   const { discovered, discover, attach, launch } = useSessions();
 
@@ -45,7 +54,7 @@ export function SessionDiscoveryList({ projectId }: { projectId: string }) {
               className="flex items-center gap-2 bg-bg-2 rounded px-2 py-1.5"
             >
               <span className="text-[10px] uppercase bg-bg-3 rounded px-1 font-mono">
-                {s.source}
+                {SOURCE_LABELS[s.source] ?? s.source}
               </span>
               <span className="text-sm flex-1 truncate">{s.hint}</span>
               <button
@@ -54,7 +63,9 @@ export function SessionDiscoveryList({ projectId }: { projectId: string }) {
                 data-testid={`attach-${s.sessionId}`}
                 className="text-xs bg-accent text-white rounded px-2 py-0.5"
               >
-                attach
+                {s.source === "managed-pty" || s.source === "wrapper"
+                  ? "resume"
+                  : "attach"}
               </button>
             </li>
           ))}
