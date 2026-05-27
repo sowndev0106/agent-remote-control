@@ -6,7 +6,7 @@ import { randomBytes } from "node:crypto";
 import { createServer } from "node:net";
 import { loadConfig, saveConfig } from "../src/server/core/config.js";
 import { ensureSecretKey } from "../src/server/core/secret-key.js";
-import { SessionStore } from "../src/server/core/session.js";
+import { AuthSessionStore } from "../src/server/core/auth-session.js";
 import { hashPassword } from "../src/server/core/auth.js";
 import { buildApp, SESSION_COOKIE } from "../src/server/core/app.js";
 import {
@@ -35,7 +35,7 @@ describe("smoke (S01-T11)", () => {
     await saveConfig(cfgPath, config);
 
     const secret = await ensureSecretKey(join(dir, "secret.key"));
-    const sessions = new SessionStore({
+    const sessions = new AuthSessionStore({
       path: join(dir, "sessions.json"),
       idleTimeoutMs: config.server.sessionIdleTimeoutMs,
     });
@@ -97,7 +97,7 @@ describe("smoke (S01-T11)", () => {
     expect(hash).not.toBe("correct-horse-battery");
     expect(hash.length).toBeGreaterThan(20);
 
-    const sessions = new SessionStore({
+    const sessions = new AuthSessionStore({
       path: join(dir, "sessions.json"),
       idleTimeoutMs: 60_000,
     });

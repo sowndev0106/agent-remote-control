@@ -2,7 +2,7 @@
 import { WebSocketServer, type WebSocket } from "ws";
 import type { IncomingMessage } from "node:http";
 import type { AppInstance } from "../app.js";
-import type { SessionStore } from "../session.js";
+import type { AuthSessionStore } from "../auth-session.js";
 import type { TerminalService } from "../../domains/terminal.js";
 import {
   authenticateUpgrade,
@@ -13,7 +13,7 @@ import {
 
 export function mountTerminalWS(opts: {
   app: AppInstance;
-  sessions: SessionStore;
+  sessions: AuthSessionStore;
   terminal: TerminalService;
 }): WebSocketServer {
   const wss = new WebSocketServer({ noServer: true });

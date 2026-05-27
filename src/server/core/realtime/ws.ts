@@ -2,7 +2,7 @@
 import { WebSocketServer, type WebSocket } from "ws";
 import type { AppInstance } from "../app.js";
 import type { RealtimeBus } from "./bus.js";
-import type { SessionStore } from "../session.js";
+import type { AuthSessionStore } from "../auth-session.js";
 import {
   authenticateUpgrade,
   cookieHeader,
@@ -12,7 +12,7 @@ import {
 export function mountRealtimeWS(opts: {
   app: AppInstance;
   bus: RealtimeBus;
-  sessions: SessionStore;
+  sessions: AuthSessionStore;
   path?: string;
 }): WebSocketServer {
   const path = opts.path ?? "/api/realtime";

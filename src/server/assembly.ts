@@ -1,7 +1,7 @@
 // src/server/assembly.ts
 import { loadConfig, type AppConfig } from "./core/config.js";
 import { ensureSecretKey } from "./core/secret-key.js";
-import { SessionStore } from "./core/session.js";
+import { AuthSessionStore } from "./core/auth-session.js";
 import { buildApp, type AppInstance } from "./core/app.js";
 import { registerLoginRoutes } from "./http/login.js";
 import { registerDomainRoutes } from "./http/domain.js";
@@ -56,7 +56,7 @@ export interface AssembleOpts {
 
 export interface AssembledDeps {
   config: AppConfig;
-  cookieSessions: SessionStore;
+  cookieSessions: AuthSessionStore;
   projects: ProjectStore;
   providers: ProviderRegistry;
   agentSessions: SessionStoreLite;
@@ -95,7 +95,7 @@ export async function assembleServer(opts: AssembleOpts): Promise<AssembledServe
 
   const secret = overrides.secret ?? (await ensureSecretKey(paths.secretFile));
 
-  const cookieSessions = new SessionStore({
+  const cookieSessions = new AuthSessionStore({
     path: paths.sessionsFile,
     idleTimeoutMs: config.server.sessionIdleTimeoutMs,
   });

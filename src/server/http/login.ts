@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AppConfig } from "../core/config.js";
-import { SessionStore } from "../core/session.js";
+import { AuthSessionStore } from "../core/auth-session.js";
 import { verifyPassword } from "../core/auth.js";
 import { AppError, errEnvelope, okEnvelope } from "../core/errors.js";
 import { issueCsrfToken, CSRF_COOKIE } from "../core/csrf.js";
@@ -14,7 +14,7 @@ const __dirname = dirname(__filename);
 
 interface Deps {
   config: AppConfig;
-  sessions: SessionStore;
+  sessions: AuthSessionStore;
 }
 
 interface RateRecord {

@@ -11,7 +11,7 @@ interface SessionData {
   sessions: Record<string, SessionRecord>;
 }
 
-export class SessionStore {
+export class AuthSessionStore {
   private sessions = new Map<string, SessionRecord>();
   private readonly path: string;
   private readonly idleTimeoutMs: number;
