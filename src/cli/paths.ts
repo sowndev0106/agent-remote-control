@@ -20,6 +20,10 @@ export function sessionsFile(): string {
   return join(configDir(), "sessions.json");
 }
 
+export function projectsFile(): string {
+  return join(configDir(), "projects.json");
+}
+
 export function systemdUserDir(): string {
   return join(xdg("XDG_CONFIG_HOME", ".config"), "systemd", "user");
 }
