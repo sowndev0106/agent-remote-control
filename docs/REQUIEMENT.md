@@ -5,7 +5,8 @@
 Product requirement draft for Phase 1 MVP.
 
 This file intentionally uses the requested path `docs/REQUIEMENT.md`.
-The design source is `docs/design.md`.
+This is the general requirement document. UI layout details live in
+`docs/design.md`. Frontend behavior details live in `docs/design-frontend.md`.
 
 ## Goal
 
@@ -24,6 +25,7 @@ providers behind the same provider adapter interface.
 ## Source References
 
 - `docs/design.md`
+- `docs/design-frontend.md`
 - `ref-source/remote-control.md`
 - `ref-source/opencode`
 - `ref-source/opencode/packages/opencode/src/cli/cmd/serve.ts`

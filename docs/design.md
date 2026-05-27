@@ -1,629 +1,337 @@
-# Agent Remote Control Design
+# Agent Remote Control UI Layout Design
 
 ## Status
 
-Design draft for user review.
+UI layout design draft for Phase 1 MVP.
 
-This document defines the Phase 1 MVP for an Ubuntu-installed web app that remotely controls local AI coding agents. Phase 1 targets Antigravity first. Claude, Codex, and opencode are future providers behind the same provider adapter boundary.
+This document focuses only on screen structure, layout rules, panel placement,
+and responsive behavior. General product requirements live in
+`docs/REQUIEMENT.md`. Frontend interaction and state behavior live in
+`docs/design-frontend.md`.
 
-## Problem
+## Layout Goal
 
-`opencode serve --port 4096` is useful because it exposes a web/API surface for controlling an AI coding session, but it requires the user to manually run the serve command. The desired product is an installed Ubuntu app that starts automatically, opens a local web port, requires an app password, lets the user choose a project, then remotely views and controls AI provider sessions from a browser.
+The web app should feel like a practical remote coding workspace, not a landing
+page. The first useful screen after login should help the user select a project,
+attach or launch Antigravity, view the active AI session, browse files, and open
+project terminals.
 
-For Phase 1, the app must control Antigravity. It should use the opencode web experience as the main UI reference and use `ref-source/antigravity_phone_chat` as the practical Antigravity control reference.
+The main visual reference is the opencode web workspace: dense sidebars,
+central conversation area, persistent composer, explicit status/action areas,
+and utility panels for terminal and files.
 
-## Sources Reviewed
+## App Shell
 
-- Local opencode reference: `ref-source/opencode`
-- opencode serve entrypoint: `ref-source/opencode/packages/opencode/src/cli/cmd/serve.ts`
-- opencode web app UI: `ref-source/opencode/packages/app/src`
-- opencode HTTP API list: `ref-source/opencode/packages/sdk/openapi.json`
-- Local Antigravity phone/chat reference: `ref-source/antigravity_phone_chat`
-- Antigravity CLI docs: https://antigravity.google/docs/cli-overview
-- Antigravity CLI features: https://antigravity.google/docs/cli-features
-- Antigravity migration docs for skills/MCP conventions: https://antigravity.google/docs/gcli-migration
-
-## Decisions
-
-1. Scope is Phase 1 MVP for Antigravity only.
-2. Provider architecture must leave room for Claude, Codex, and opencode later.
-3. Server binds to `127.0.0.1` by default and may be configured to bind `0.0.0.0`.
-4. Authentication is one app-level password with a web session token after login.
-5. UI direction is opencode-style workspace:
-   - project rail
-   - session list
-   - central live mirror/timeline
-   - action/status side panel
-   - responsive phone layout
-6. Project picker can browse any readable folder, but marks Git repos and AI-context folders as recommended.
-7. Antigravity adapter strategy is hybrid:
-   - Phase 1 priority: Antigravity desktop via Chrome DevTools Protocol (CDP), based on `antigravity_phone_chat`.
-   - Secondary adapter: PTY/TUI bridge for `agy` or other terminal CLIs.
-   - Future adapter: official SDK/API if stable enough.
-8. MVP sync level is mirror plus basic parsed actions:
-   - show live mirrored Antigravity state
-   - send prompt
-   - stop generation
-   - new/select conversation
-   - mode/model state
-   - remote click for approval/action buttons
-   - parse basic action states where possible
-9. Ubuntu install default is `systemd --user`; system-level service is roadmap.
-10. Product and binary name are `agent-remote-control` until renamed.
-11. Default port is `4096` for opencode familiarity. If that port is busy, the app must fail clearly and ask for a configured alternate port; it must not kill unrelated processes.
-12. MVP launch behavior is attach-first. If Antigravity is not already available on a debug port, the UI offers an explicit "Launch Antigravity" action for the selected project.
-13. HTTPS certificates are generated on demand, not during default install.
-14. MVP persistence uses local JSON files. SQLite is reserved for later if session/event history becomes too large for simple files.
-15. Phase 1 includes a browser terminal panel. It runs real local shell sessions through a server-managed PTY and is protected by the same app authentication.
-16. Phase 1 includes a project folder/file explorer. It is read-only by default and is scoped to the selected project directory.
-
-## opencode Serve Analysis
-
-`opencode serve` starts a headless server. It does not require a project instance at startup because requests route project context through the directory header/query. It resolves network settings from CLI flags and config, then starts the server and blocks forever.
-
-Important behavior to clone:
-
-- Default local HTTP API/server model.
-- Configurable hostname, port, CORS, and optional mDNS.
-- Password protection via server password.
-- Directory-scoped requests using a directory header/query.
-- Web UI served from embedded assets or proxied upstream.
-- Server-sent events for realtime sync.
-- Session, project, file, provider/model, MCP, permission, question, PTY, VCS, and event APIs.
-
-The new app should not literally run `opencode serve --port 4096`; it should implement the same product shape: installed local daemon, local web UI, realtime session control, and provider-backed project sessions.
-
-## opencode UI Features To Expect
-
-The target UI should preserve these concepts from opencode:
-
-- Home screen with saved projects and recent sessions.
-- Add/open project dialog with folder search.
-- Sidebar project rail and session/workspace list.
-- New session flow.
-- Chat composer with prompt history.
-- Slash command popover.
-- `@` mentions for agents and files.
-- File attachments and selected file/line context.
-- Model selector and model variant selector.
-- Agent selector/cycle.
-- MCP server toggle/list.
-- Permission dock with allow once, allow always, and deny.
-- Todo/progress dock.
-- Follow-up and question docks.
-- Revert, undo, redo, compact, fork, share/unshare where provider supports them.
-- File tree and review/diff panel.
-- Built-in terminal panel.
-- Session timeline with tool/action blocks.
-- Context usage/status indicators.
-- Settings for providers, models, general preferences, and keybindings.
-
-Phase 1 does not need full parity, but the information architecture should not block these features.
-
-## Antigravity Reference Analysis
-
-`ref-source/antigravity_phone_chat` controls an already-running Antigravity desktop session through CDP:
-
-- Launch Antigravity with `antigravity . --remote-debugging-port=9000`.
-- Discover CDP targets on ports `9000-9003`.
-- Connect to the workbench target via WebSocket.
-- Capture the chat DOM from `#conversation`, `#chat`, or `#cascade`.
-- Remove desktop-only input overlays while preserving actionable buttons.
-- Convert local images to base64 for browser rendering.
-- Poll every second and broadcast only when snapshot hash changes.
-- Send prompts by injecting text into the contenteditable input.
-- Stop generation by clicking cancel/stop controls.
-- Change mode/model through heuristic UI selection.
-- Relay mobile/browser clicks back to desktop using text matching and occurrence index.
-- Support action buttons such as Allow, Deny, Run, Review Changes, Apply, and Save.
-- Sync scroll from remote browser to desktop.
-- Expose health, snapshot, app-state, send, stop, new-chat, chat-history, select-chat, remote-click, and remote-scroll endpoints.
-
-The app should adopt the robust ideas from this source, not its exact mobile-only UX:
-
-- CDP adapter with centralized call tracking and timeout.
-- Snapshot diffing by hash.
-- Deterministic remote click targeting.
-- Leaf-most filtering for nested DOM.
-- Optimistic prompt submission.
-- Local-first security model.
-- No extraction of Google or provider OAuth tokens.
-
-## Product Architecture
+Desktop shell:
 
 ```text
-Browser UI
-  |
-  | HTTPS/HTTP + WebSocket/SSE
-  v
-Agent Remote Control Server
-  |
-  +-- Auth/session middleware
-  +-- Project registry
-  +-- Provider registry
-  +-- Session/event store
-  +-- File/project service
-  +-- Terminal PTY service
-  +-- Realtime event bus
-  |
-  +-- Antigravity CDP Adapter       Phase 1 priority
-  +-- Antigravity PTY Adapter       Phase 1/2 fallback
-  +-- Claude Adapter                Future
-  +-- Codex Adapter                 Future
-  +-- opencode Adapter              Future
++--------------------------------------------------------------------------------+
+| Top Bar: project, provider, session status, quick actions, settings             |
++------+----------------------+-----------------------------------+--------------+
+| Rail | Secondary Panel      | Main Work Area                    | Right Panel  |
+|      | sessions or files    | Antigravity mirror/timeline       | actions      |
+|      |                      |                                   | status       |
+|      |                      |                                   | metadata     |
++------+----------------------+-----------------------------------+--------------+
+| Composer: prompt input, slash commands, attach context, send/stop               |
++--------------------------------------------------------------------------------+
+| Terminal Panel: tabs, active PTY, plus tab, close tab, resize handle             |
++--------------------------------------------------------------------------------+
 ```
 
-The UI talks only to the app server. Provider-specific details stay inside adapters. A provider adapter exposes a common interface:
+Default desktop regions:
 
-- `detect()`
-- `start(project, options)`
-- `attach(session)`
-- `stop(session)`
-- `sendPrompt(session, text, context)`
-- `sendInput(session, input)`
-- `listConversations(project)`
-- `selectConversation(session, conversationID)`
-- `getSnapshot(session)`
-- `getStatus(session)`
-- `getActions(session)`
-- `performAction(session, actionID)`
-- `dispose(session)`
+- Top bar height: compact and persistent.
+- Project rail: narrow icon rail for projects, files, terminal, settings.
+- Secondary panel: sessions by default; switches to file explorer when selected.
+- Main work area: live Antigravity mirror or normalized session timeline.
+- Right panel: provider status, pending actions, selected file metadata, logs.
+- Composer: always near the main work area, above terminal when terminal is open.
+- Terminal panel: bottom dock, resizable, hidden by default or remembered per
+  project.
 
-## Core User Flow
+## Top Bar
 
-1. User installs the app on Ubuntu.
-2. Installer creates config and a `systemd --user` service.
-3. App starts automatically and listens on `127.0.0.1:<port>`.
-4. User opens the web UI.
-5. User enters the app password.
-6. User selects or adds a project folder.
-7. App records the project in the recent project registry.
-8. User chooses provider: Antigravity is enabled; Claude, Codex, and opencode show as disabled/future.
-9. User starts or attaches an Antigravity session.
-10. App launches or detects Antigravity debug mode and connects CDP.
-11. UI shows project/session sidebar plus central Antigravity mirror/timeline.
-12. User sends prompts, clicks action buttons, approves/denies requests, stops generation, switches conversations, and watches status from the browser.
-13. User opens one or more terminal tabs for the selected project and runs local commands without leaving the web UI.
-14. User opens the file explorer to browse folders and inspect files in the selected project.
+The top bar shows current workspace context and global controls:
 
-## Project Picker Requirements
+- selected project name and path hint
+- provider selector
+- active provider status
+- Antigravity attach or launch state
+- connection indicator
+- quick command button
+- settings button
 
-The project picker must:
+The top bar should not become a large navigation header. It is a workspace
+control strip.
 
-- Browse the local filesystem from home or configured roots.
-- Allow any readable folder.
-- Mark a folder as recommended if it contains one or more:
-  - `.git`
-  - `AGENTS.md`
-  - `GEMINI.md`
-  - `.agents/`
-  - `.opencode/`
-  - `.claude/`
-  - `.codex/`
-- Persist recent projects.
-- Persist last provider per project.
-- Persist last selected conversation/session per project when possible.
-- Support removing projects from the saved list without deleting files.
+## Project Rail
 
-## File Explorer Requirements
+The rail is the stable left-most navigation:
 
-Phase 1 must include a folder/file explorer for the selected project:
+- recent projects
+- open project
+- sessions
+- files
+- terminal
+- actions
+- settings
 
-- File explorer opens from the main workspace UI.
-- It displays a tree rooted at the selected project directory.
-- It supports expanding/collapsing folders.
-- It shows file and folder icons or type indicators.
-- It hides common heavy folders by default:
-  - `.git`
-  - `node_modules`
-  - `dist`
-  - `build`
-  - `.next`
-  - `.cache`
-  - additional configured ignore folders
-- Hidden folders can be revealed with a toggle.
-- It supports refresh for a folder or the whole tree.
-- It supports basic fuzzy file search within the project.
-- It opens text files in a read-only viewer.
-- It detects binary files and shows metadata instead of raw content.
-- It limits preview size for large files and offers an explicit "open anyway" action.
-- It shows useful metadata:
-  - path relative to project
-  - file size
-  - modified time
-  - binary/text state
-- It supports copying relative path and absolute path.
-- It supports adding an opened file path as prompt context when the active provider adapter supports prompt context.
-- It does not edit, rename, delete, move, or create files in MVP.
-- It should update when terminal/provider actions change files, using manual refresh first and file watching later.
+The rail uses icons with tooltips. Labels may appear only when the rail is
+expanded or on mobile drawers.
 
-## Antigravity CDP MVP
+Rail behavior:
 
-The Antigravity CDP adapter must:
+- Selecting a project changes the active workspace.
+- Selecting files opens the file explorer in the secondary panel.
+- Selecting terminal opens or focuses the bottom terminal panel.
+- Selecting actions focuses the right action panel.
 
-- Detect an existing Antigravity debug instance on configured ports.
-- Optionally launch Antigravity with:
-  - selected project directory
-  - `--remote-debugging-port=<port>`
-- Attach to the correct CDP target.
-- Wait gracefully if Antigravity is not yet available.
-- Capture and sanitize conversation DOM snapshots.
-- Preserve action bars needed for remote control.
-- Send snapshot updates to browsers only when content changes.
-- Expose app state:
-  - connected/disconnected
-  - active project
-  - active conversation
-  - mode
-  - model
-  - busy/generating
-  - pending approval/action count when detected
-- Send prompt text.
-- Stop current generation.
-- Start a new conversation.
-- List/select recent conversations where DOM scraping can detect them.
-- Relay clicks for:
-  - thought/status expansion
-  - edited files blocks
-  - Review Changes
-  - Allow/Deny
-  - Run/Reject
-  - Apply/Save/Confirm
-- Sync remote scroll to desktop only when the user explicitly scrolls in the web mirror.
+## Home And Project Picker
 
-## PTY Adapter Requirement
+When no project is selected, the app shows a project-first home screen:
 
-The provider PTY adapter is separate from the user-facing browser terminal. It is not the primary Antigravity MVP path, but the design must reserve it. It should support terminal-first providers such as `agy`, Claude Code, Codex, and opencode TUI.
+- recent project list
+- open folder action
+- browse folder dialog
+- recommended folder markers
+- provider availability summary
+- app service status
 
-The PTY adapter should eventually:
+The home screen should not be marketing content. It should be a functional
+launcher.
 
-- Spawn provider CLI inside a pseudo-terminal.
-- Stream terminal output to the browser.
-- Send keystrokes/prompt text from browser to PTY.
-- Resize terminal from browser viewport.
-- Parse basic states from output when possible.
-- Provide fallback manual terminal mode when structured state is unavailable.
+Project picker layout:
 
-## Browser Terminal Requirements
+```text
++--------------------------------------------------------------+
+| Open Project                                                  |
++-----------------------------+--------------------------------+
+| Folder browser              | Folder details                  |
+| home/configured roots        | path                           |
+| expandable folder list       | recommendation signals         |
+| search                       | provider preference            |
+|                              | open button                    |
++-----------------------------+--------------------------------+
+```
 
-Phase 1 must include a terminal experience similar to the screenshot reference:
+Recommended folders are visually marked when they contain `.git`, `AGENTS.md`,
+`GEMINI.md`, `.agents/`, `.opencode/`, `.claude/`, or `.codex/`.
 
-- Terminal panel can be opened from the main workspace UI.
-- Terminal panel supports multiple tabs.
-- Each tab has:
-  - stable title such as `Terminal 1`
-  - close action
-  - active-state indicator
-  - optional rename later
-- A plus action creates a new terminal tab.
-- New terminal sessions start in the selected project directory.
-- Terminal backend creates a real pseudo-terminal attached to the user's default shell from `$SHELL`, falling back to `/bin/bash`.
-- Terminal frontend uses a browser terminal renderer such as xterm.js.
-- Browser and backend communicate through authenticated WebSocket.
-- Terminal supports:
-  - keyboard input
-  - copy and paste
-  - scrollback
-  - terminal resize
-  - process exit detection
-  - reconnect display for still-running sessions when the browser reloads
-- Terminal sessions are scoped to the current logged-in app user.
-- Terminal output is not persisted by default; only tab metadata may be persisted for reconnect.
-- Closing a terminal tab terminates its PTY process after confirmation if a foreground process is still running.
-- Terminal can be disabled in config for users who only want AI-provider remote control.
-- Mobile UI exposes terminal as a full-screen drawer or tab because split panes are too cramped on phones.
+## Workspace Main Area
 
-## Web UI Requirements
+The main area has three possible display modes:
 
-Desktop layout:
+1. Antigravity mirror mode.
+2. Normalized timeline mode.
+3. Empty or recovery state.
 
-- Left project rail.
-- Session/conversation sidebar.
-- Main live mirror/timeline.
-- Right action/status panel.
-- Bottom composer.
-- Resizable terminal panel with tabs, located below the mirror/timeline or available as a full terminal view.
-- File explorer panel available as a left/side panel or dedicated tab, with read-only file viewer.
+Phase 1 defaults to Antigravity mirror mode because the CDP adapter can mirror
+desktop UI state quickly.
 
-Main screen states:
+Mirror mode requirements:
 
-- Logged out.
-- No project selected.
-- Project selected, no provider session.
-- Connecting to provider.
-- Provider connected.
-- Provider disconnected/retrying.
-- Generation running.
-- Approval/action pending.
-- Error state with recovery action.
+- show sanitized Antigravity conversation content
+- preserve visible action buttons
+- allow remote click relay on supported actions
+- show loading or reconnect overlay without replacing the whole workspace
+- provide scroll to bottom
+- provide manual refresh
+- keep composer and action panel visible
 
-The main mirror should support:
+Timeline mode is reserved for future provider adapters that expose structured
+events.
 
-- live snapshot rendering
-- refresh
-- scroll to bottom
-- remote click relay
-- prompt input
-- quick actions
-- stop button
-- new conversation
-- conversation history selector
+## Session Sidebar
 
-The side panel should show:
+The default secondary panel is the session or conversation sidebar:
+
+- new session action
+- current conversation
+- recent conversations when scrapeable
+- generation status per active session
+- provider capability markers
+
+When Antigravity conversation history cannot be detected, the sidebar should
+show a clear unavailable state while keeping the active session usable.
+
+## File Explorer Panel
+
+The file explorer occupies the secondary panel or a dedicated split view.
+
+Layout:
+
+```text
++------------------------------+
+| Files: search, refresh, show  |
+| hidden toggle                 |
++------------------------------+
+| Project tree                  |
+| - folders                     |
+| - files                       |
++------------------------------+
+| Selected file metadata        |
++------------------------------+
+```
+
+File viewer placement:
+
+- Desktop: opens in main work area as a read-only viewer tab or side-by-side
+  preview.
+- Compact desktop: opens over the main work area in a dismissible panel.
+- Mobile: opens as a full-screen file view with back navigation.
+
+The file explorer is read-only in MVP. Destructive controls are not shown.
+
+## Right Action Panel
+
+The right panel is for information that affects current work:
 
 - provider status
-- project path
-- launch command or attach target
+- active project path
+- attach target or launch command
 - CDP port
-- active model/mode
-- pending actions
+- active mode and model when detectable
+- pending approvals
+- remote action buttons
 - last error
 - adapter logs
 - terminal session count
-- selected file/folder metadata when file explorer is active
+- selected file metadata
 
-Mobile layout:
+The right panel should stay compact. Large logs or long file metadata should
+expand into a detail view instead of stretching the panel.
 
-- Single-column live mirror first.
-- Project/session/history in drawers.
-- Bottom composer optimized for phone keyboard.
-- Action buttons remain tappable.
+## Composer
 
-## Slash Commands
+The composer is the main control for AI input:
 
-The app should expose a slash command palette inspired by opencode and Antigravity CLI. Phase 1 commands:
+- multiline prompt input
+- send button
+- stop button while generation runs
+- slash command palette
+- file context chips
+- provider capability hints
 
-- `/new` starts a new provider conversation.
-- `/stop` stops current generation.
-- `/project` opens project picker.
-- `/files` opens or focuses the file explorer.
-- `/open` opens file search.
-- `/provider` opens provider selector.
-- `/model` opens model selector if adapter supports it.
-- `/mode` opens Antigravity mode selector if adapter supports it.
-- `/history` opens conversation selector.
-- `/actions` focuses pending action panel.
-- `/terminal` opens or focuses the browser terminal panel.
-- `/settings` opens app settings.
+Layout behavior:
 
-Future commands:
+- Desktop: composer sits below the main work area and above terminal.
+- Terminal open: composer remains visible unless user switches to full terminal
+  mode.
+- Mobile: composer is fixed near the bottom and safe for phone keyboards.
 
-- `/skills`
-- `/mcp`
-- `/permissions`
-- `/agents`
-- `/tasks`
-- `/fork`
-- `/compact`
-- `/undo`
-- `/redo`
+## Terminal Panel
 
-## Security Requirements
-
-- Require app-level password on first access.
-- Use a secure session cookie or bearer token after login.
-- Never store provider OAuth/API secrets in browser local storage.
-- Bind to `127.0.0.1` by default.
-- When binding `0.0.0.0`, show a startup warning and require a configured non-default password.
-- Provide optional HTTPS/self-signed certificate support.
-- Set strict CSP for the web UI.
-- Sanitize any DOM snapshot before rendering.
-- Escape any scraped title/text inserted into app-owned DOM.
-- Protect WebSocket/SSE endpoints with the same auth session.
-- Protect terminal WebSocket endpoints with the same auth session.
-- Treat terminal access as full local shell access; when binding `0.0.0.0`, startup warnings must explicitly mention terminal risk.
-- Allow terminal to be disabled by config.
-- Do not persist terminal output by default.
-- Restrict file explorer reads to the selected project root and explicitly configured project folders.
-- Resolve symlinks and reject path traversal outside allowed roots.
-- Do not expose arbitrary filesystem browsing from the file explorer after a project is selected; project selection is the only broad filesystem browsing flow.
-- Keep file explorer read-only in MVP.
-- Do not persist file contents by default.
-- Do not auto-exempt LAN clients in MVP; all clients authenticate.
-- Log security-relevant startup warnings.
-
-## Configuration
-
-Default config location:
+The terminal appears as a bottom dock similar to an IDE terminal:
 
 ```text
-~/.config/agent-remote-control/config.json
++------------------------------------------------------------------+
+| Terminal 1 x | +                                                 |
++------------------------------------------------------------------+
+| shell output and input                                            |
+|                                                                  |
++------------------------------------------------------------------+
 ```
 
-MVP config fields:
+Terminal controls:
 
-```json
-{
-  "server": {
-    "host": "127.0.0.1",
-    "port": 4096,
-    "passwordHash": "",
-    "https": false
-  },
-  "projects": {
-    "roots": ["~"],
-    "recentLimit": 50
-  },
-  "fileExplorer": {
-    "enabled": true,
-    "showHidden": false,
-    "maxPreviewBytes": 524288,
-    "ignore": [".git", "node_modules", "dist", "build", ".next", ".cache"]
-  },
-  "terminal": {
-    "enabled": true,
-    "shell": "",
-    "maxTabs": 8,
-    "scrollback": 10000,
-    "idleTimeoutMs": 3600000
-  },
-  "providers": {
-    "antigravity": {
-      "enabled": true,
-      "adapter": "cdp",
-      "command": "antigravity",
-      "debugPort": 9000,
-      "debugPortRange": [9000, 9001, 9002, 9003],
-      "launchTimeoutMs": 30000,
-      "snapshotPollMs": 1000
-    }
-  }
-}
-```
+- tab list
+- active tab indicator
+- close tab
+- plus tab
+- optional split/full-screen toggle
+- resize handle on desktop
 
-## Local Data
+Terminal defaults:
 
-The app should store:
+- starts in selected project directory
+- hidden until opened
+- remembered per project when practical
+- full-screen drawer on mobile
 
-- saved projects
-- recent projects
-- provider preferences per project
-- active sessions/conversations metadata
-- file explorer expanded folder state
-- recently opened file paths
-- terminal tab metadata for reconnect
-- app settings
-- adapter logs
-- auth session metadata
+## Provider Attach Layout
 
-It should not store:
+When a project is selected but no provider session is active, the main area
+shows an attach screen:
 
-- provider OAuth tokens copied from desktop apps
-- raw provider API keys unless explicitly added later with secure storage
-- full mirrored DOM history by default
-- file contents by default
-- terminal scrollback/output by default
+- selected project path
+- Antigravity provider card enabled
+- Attach to running Antigravity action
+- Launch Antigravity action
+- detected CDP port list when available
+- clear troubleshooting status
 
-## Install And Runtime
+Future providers appear as disabled cards with a short unavailable label.
 
-MVP install target:
+## Responsive Rules
 
-- Ubuntu
-- `systemd --user` service
-- starts on user login
-- no sudo required for normal install
-- CLI commands:
-  - `agent-remote-control install`
-  - `agent-remote-control start`
-  - `agent-remote-control stop`
-  - `agent-remote-control status`
-  - `agent-remote-control open`
-  - `agent-remote-control config`
+Desktop wide:
 
-Roadmap:
+- rail, secondary panel, main area, right panel, composer, and terminal can all
+  be visible.
 
-- system-wide `systemd` service
-- packaged `.deb`
-- optional tunnel helper
-- tray/desktop launcher
+Desktop narrow:
 
-## Non-Goals For Phase 1
+- right panel can collapse into an action drawer.
+- terminal can switch to full-width bottom dock.
+- file viewer can replace the main area.
 
-- Full Claude/Codex/opencode provider implementation.
-- Full opencode API compatibility.
-- Full structured Antigravity internal event stream.
-- Multi-user auth/RBAC.
-- Cloud-hosted relay service.
-- Provider token management.
-- App-specific file editing outside provider actions or explicit terminal commands.
-- Replacing Antigravity desktop or CLI.
+Tablet:
 
-## Acceptance Criteria
+- rail remains visible.
+- secondary panel and right panel become drawers.
+- main area and composer remain primary.
 
-Phase 1 is complete when:
+Phone:
 
-- App installs and starts as a user service on Ubuntu.
-- Web UI is reachable on configured localhost port.
-- Login requires app password.
-- User can add/select project folders and see recent projects.
-- User can browse the selected project through a folder/file explorer.
-- User can expand/collapse folders and refresh the tree.
-- User can open text files in a read-only viewer.
-- File explorer blocks path traversal outside the selected project.
-- Binary or oversized files do not render raw content by default.
-- Provider selector shows Antigravity enabled and other providers disabled/future.
-- App can launch or attach to Antigravity debug mode for selected project.
-- Web UI displays live Antigravity conversation mirror.
-- Prompt sent from web reaches Antigravity.
-- Stop action works during generation.
-- New conversation action works when Antigravity exposes it.
-- Conversation history can be listed/selected when scrapeable.
-- Remote approval/action buttons work for common Allow/Deny/Run/Review cases.
-- User can open a terminal panel for the selected project.
-- User can create, switch, and close terminal tabs.
-- Terminal starts in the selected project directory.
-- Terminal can run common commands such as `pwd`, `ls`, and project test commands.
-- Terminal resizes correctly when the browser panel changes size.
-- Terminal WebSocket requires authenticated session.
-- Adapter status and errors are visible.
-- Binding defaults to `127.0.0.1`.
-- Binding `0.0.0.0` requires explicit config and non-default password.
+- single-column layout.
+- mirror/timeline is first.
+- project, sessions, files, actions, terminal, and settings are bottom tabs or
+  drawers.
+- terminal and file viewer use full-screen modes.
+- composer stays reachable above the keyboard.
 
-## Risks
+## Empty And Error States
 
-- Antigravity desktop DOM may change and break CDP selectors.
-- Remote click targeting is heuristic.
-- CDP requires launching Antigravity with remote debugging enabled.
-- Browser rendering of cloned DOM can be heavy.
-- Browser terminal grants remote shell access if auth or network exposure is misconfigured.
-- File explorer can expose sensitive local files if project scoping or symlink handling is wrong.
-- Very large repositories can make tree loading and search slow.
-- PTY parsing may not produce reliable structured state.
-- Official Antigravity SDK/API may evolve, requiring adapter changes.
+Required states:
 
-Mitigations:
+- logged out
+- no project selected
+- project selected with no provider session
+- connecting to provider
+- provider connected
+- provider disconnected
+- generation running
+- approval pending
+- terminal disabled
+- file explorer disabled
+- file blocked by size or binary detection
+- path blocked by project root protection
+- busy port during service startup
 
-- Keep CDP selector logic isolated in the adapter.
-- Provide manual refresh and reconnect controls.
-- Keep a raw mirror fallback even when structured parsing fails.
-- Store adapter logs for troubleshooting.
-- Keep terminal disabled-by-config and clearly warn when the server binds beyond loopback.
-- Keep file explorer scoped to selected project roots and make it read-only for MVP.
-- Ignore heavy directories by default and use lazy folder loading.
-- Build adapter contract before adding more providers.
+Every error state should provide one obvious recovery action.
 
-## Roadmap
+## Visual Density
 
-Phase 1:
+The UI should be dense but readable:
 
-- Ubuntu user service
-- password auth
-- project picker
-- opencode-style web UI
-- project file explorer
-- browser terminal panel with tabs
-- Antigravity CDP adapter
-- live mirror, prompt, stop, remote actions
+- no hero sections
+- no marketing panels
+- no decorative cards inside cards
+- compact panels with clear labels
+- icons for repeated actions
+- consistent panel widths
+- stable terminal and tree dimensions
+- responsive text that does not overflow controls
 
-Phase 2:
+## Layout Acceptance
 
-- PTY adapter for `agy`
-- better parsed timeline/actions
-- slash command expansion
-- skills/MCP screens for Antigravity where supported
+The UI layout is acceptable when:
 
-Phase 3:
-
-- Claude adapter
-- Codex adapter
-- opencode adapter
-- provider-specific permissions/settings
-- `.deb` packaging and optional system service
-
-Phase 4:
-
-- optional tunnel setup
-- HTTPS certificate helper
-- richer session persistence
-- multi-device polish
-
-## Locked Assumptions
-
-- App name and binary name: `agent-remote-control`.
-- Default port: `4096`.
-- Port conflict behavior: fail with instructions; do not auto-kill processes.
-- Antigravity startup behavior: attach first, launch only after explicit user action.
-- HTTPS behavior: on-demand certificate generation.
-- Persistence backend: JSON files for MVP.
-- Browser terminal: enabled by default, starts in the selected project directory, uses `$SHELL` or `/bin/bash`, and does not persist terminal output.
-- File explorer: enabled by default, read-only in MVP, scoped to the selected project root, lazy-loads folders, and does not persist file contents.
+- A desktop user can keep mirror, composer, actions, files, and terminal in one
+  workspace without page navigation.
+- A mobile user can read the mirror, send a prompt, approve an action, browse a
+  file, and open terminal through drawers or tabs.
+- No Phase 1 feature requires a hidden route or developer-only page.
+- The file explorer and terminal are first-class workspace panels.
+- Disabled future providers are visible without blocking Antigravity work.
