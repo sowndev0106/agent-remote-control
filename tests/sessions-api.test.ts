@@ -15,6 +15,8 @@ import { registerDomainRoutes } from "../src/server/http/domain.js";
 import { ProjectStore } from "../src/server/domains/projects.js";
 import { ProviderRegistry } from "../src/server/domains/providers.js";
 import { SessionStoreLite } from "../src/server/domains/sessions.js";
+import { RealtimeBus } from "../src/server/core/realtime/bus.js";
+import { AntigravityCdpAdapter } from "../src/server/adapters/antigravity/index.js";
 
 let dir: string;
 let rootA: string;
@@ -49,6 +51,15 @@ async function makeAuthedApp() {
   await projects.load();
   const providers = new ProviderRegistry();
   const sessionsLite = new SessionStoreLite();
+  const bus = new RealtimeBus();
+  const antigravity = new AntigravityCdpAdapter({
+    sessions: sessionsLite,
+    bus,
+    command: config.providers.antigravity.command,
+    debugPortRange: config.providers.antigravity.debugPortRange,
+    launchTimeoutMs: 500,
+    snapshotPollMs: 60_000,
+  });
 
   const app = await buildApp({
     config,
@@ -57,7 +68,14 @@ async function makeAuthedApp() {
     sessions: cookieSessions,
   });
   registerLoginRoutes(app, { config, sessions: cookieSessions });
-  registerDomainRoutes(app, { projects, providers, sessions: sessionsLite, config });
+  registerDomainRoutes(app, {
+    projects,
+    providers,
+    sessions: sessionsLite,
+    bus,
+    antigravity,
+    config,
+  });
   await app.ready();
 
   const login = await app.inject({

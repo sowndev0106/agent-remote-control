@@ -15,6 +15,9 @@ import { ProviderRegistry } from "./domains/providers.js";
 import { SessionStoreLite } from "./domains/sessions.js";
 import { tryBind } from "./core/port-check.js";
 import { assertBindAllowed, bindBanner } from "./core/bind-guard.js";
+import { RealtimeBus } from "./core/realtime/bus.js";
+import { mountRealtimeWS } from "./core/realtime/ws.js";
+import { AntigravityCdpAdapter } from "./adapters/antigravity/index.js";
 
 export async function startServer(): Promise<void> {
   const configPath = configFile();
@@ -37,6 +40,15 @@ export async function startServer(): Promise<void> {
   await projects.load();
   const providers = new ProviderRegistry();
   const sessionsLite = new SessionStoreLite();
+  const bus = new RealtimeBus();
+  const antigravity = new AntigravityCdpAdapter({
+    sessions: sessionsLite,
+    bus,
+    command: config.providers.antigravity.command,
+    debugPortRange: config.providers.antigravity.debugPortRange,
+    launchTimeoutMs: config.providers.antigravity.launchTimeoutMs,
+    snapshotPollMs: config.providers.antigravity.snapshotPollMs,
+  });
 
   const app = await buildApp({ config, configPath, secret, sessions });
   registerLoginRoutes(app, { config, sessions });
@@ -44,6 +56,8 @@ export async function startServer(): Promise<void> {
     projects,
     providers,
     sessions: sessionsLite,
+    bus,
+    antigravity,
     config,
   });
 
@@ -51,9 +65,11 @@ export async function startServer(): Promise<void> {
   if (banner) process.stderr.write("\n" + banner + "\n\n");
 
   await app.listen({ host: config.server.host, port: config.server.port });
+  mountRealtimeWS({ app, bus, sessions });
 
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info({ signal }, "shutting down");
+    await antigravity.shutdown();
     await app.close();
     process.exit(0);
   };

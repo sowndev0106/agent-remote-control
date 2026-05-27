@@ -3,8 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
-  "bin": { "agent-remote-control": "bin/agent-remote-control" },
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "agent-remote-control": "bin/agent-remote-control"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -w -p tsconfig.json",
@@ -15,30 +19,35 @@
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\""
   },
   "dependencies": {
-    "fastify": "^4.28.0",
     "@fastify/cookie": "^9.3.1",
     "@fastify/static": "^7.0.4",
-    "pino": "^9.0.0",
-    "pino-pretty": "^11.0.0",
-    "commander": "^12.1.0",
     "@inquirer/prompts": "^5.0.0",
     "argon2": "^0.41.0",
     "bcrypt": "^5.1.1",
+    "commander": "^12.1.0",
+    "dompurify": "^3.4.6",
+    "fastify": "^4.28.0",
+    "jsdom": "^29.1.1",
+    "node-pty": "^1.0.0",
+    "pino": "^9.0.0",
+    "pino-pretty": "^11.0.0",
     "proper-lockfile": "^4.1.2",
-    "node-pty": "^1.0.0"
+    "ws": "^8.21.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.5",
-    "@types/node": "^20.12.0",
     "@types/bcrypt": "^5.0.2",
+    "@types/jsdom": "^28.0.3",
+    "@types/node": "^20.12.0",
     "@types/proper-lockfile": "^4.1.4",
-    "vitest": "^1.6.0",
-    "@vitest/coverage-v8": "^1.6.0",
-    "supertest": "^7.0.0",
     "@types/supertest": "^6.0.2",
-    "eslint": "^8.57.0",
-    "@typescript-eslint/parser": "^7.7.0",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^7.7.0",
-    "prettier": "^3.2.5"
+    "@typescript-eslint/parser": "^7.7.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "supertest": "^7.0.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
   }
 }
