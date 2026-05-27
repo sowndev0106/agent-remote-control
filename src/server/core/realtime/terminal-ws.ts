@@ -1,16 +1,16 @@
+// src/server/core/realtime/terminal-ws.ts
 import { WebSocketServer, type WebSocket } from "ws";
 import type { IncomingMessage } from "node:http";
 import type { AppInstance } from "../app.js";
 import type { SessionStore } from "../session.js";
 import type { TerminalService } from "../../domains/terminal.js";
-import { SESSION_COOKIE } from "../app.js";
+import {
+  authenticateUpgrade,
+  cookieHeader,
+  reject401,
+  reject404,
+} from "./upgrade-auth.js";
 
-/**
- * Terminal WS bridge: `/api/terminal/tabs/:id/stream`.
- * AC-025: rejects unauthenticated upgrades. On connect, replays the RAM ring
- * buffer (recent output) then streams live PTY data; inbound frames are
- * written to the PTY stdin.
- */
 export function mountTerminalWS(opts: {
   app: AppInstance;
   sessions: SessionStore;
@@ -22,22 +22,20 @@ export function mountTerminalWS(opts: {
   opts.app.server.on("upgrade", (req, socket, head) => {
     const url = req.url ?? "";
     const m = re.exec(url);
-    if (!m) return; // some other WS endpoint handles it
+    if (!m) return;
 
     const tabId = m[1]!;
-    const cookies = parseCookies(req.headers.cookie ?? "");
-    const signed = cookies[SESSION_COOKIE];
-    const unsigned = signed
-      ? opts.app.unsignCookie(signed)
-      : { valid: false, value: null };
-    if (!unsigned.valid || !unsigned.value || !opts.sessions.get(unsigned.value)) {
-      socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
-      socket.destroy();
+    const auth = authenticateUpgrade({
+      cookieHeader: cookieHeader(req),
+      unsignCookie: (raw) => opts.app.unsignCookie(raw),
+      sessionsHas: (id) => !!opts.sessions.get(id),
+    });
+    if (!auth.ok) {
+      reject401(socket);
       return;
     }
     if (!opts.terminal.get(tabId)) {
-      socket.write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
-      socket.destroy();
+      reject404(socket);
       return;
     }
     wss.handleUpgrade(req, socket, head, (ws) =>
@@ -46,7 +44,6 @@ export function mountTerminalWS(opts: {
   });
 
   wss.on("connection", (ws: WebSocket, _req: IncomingMessage, tabId: string) => {
-    // Replay buffered output so a reconnect shows recent context.
     const buffered = opts.terminal.buffer(tabId);
     if (buffered) ws.send(buffered);
 
@@ -61,7 +58,6 @@ export function mountTerminalWS(opts: {
     });
 
     ws.on("message", (raw) => {
-      // Plain bytes are PTY stdin. (Resize goes through the HTTP endpoint.)
       try {
         opts.terminal.write(tabId, raw.toString("utf8"));
       } catch {
@@ -79,14 +75,4 @@ export function mountTerminalWS(opts: {
   });
 
   return wss;
-}
-
-function parseCookies(header: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const part of header.split(";")) {
-    const [k, ...rest] = part.trim().split("=");
-    if (!k) continue;
-    out[k] = decodeURIComponent(rest.join("="));
-  }
-  return out;
 }

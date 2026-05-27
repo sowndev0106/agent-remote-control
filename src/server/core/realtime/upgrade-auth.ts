@@ -1,5 +1,5 @@
 // src/server/core/realtime/upgrade-auth.ts
-import type { Socket } from "node:net";
+import type { Duplex } from "node:stream";
 import type { IncomingMessage } from "node:http";
 import { SESSION_COOKIE } from "../app.js";
 
@@ -43,12 +43,12 @@ export function authenticateUpgrade(opts: AuthenticateUpgradeOpts): UpgradeAuthR
  * Convenience helper: write a 401 and destroy the socket. Used by every WS
  * mount when authenticateUpgrade rejects.
  */
-export function reject401(socket: Socket): void {
+export function reject401(socket: Duplex): void {
   socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
   socket.destroy();
 }
 
-export function reject404(socket: Socket): void {
+export function reject404(socket: Duplex): void {
   socket.write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
   socket.destroy();
 }
