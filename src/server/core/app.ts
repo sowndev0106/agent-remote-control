@@ -1,4 +1,4 @@
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import fastifyCookie from "@fastify/cookie";
 import { createLogger } from "./logger.js";
 import type { AppConfig } from "./config.js";
@@ -33,7 +33,9 @@ function isPublic(url: string): boolean {
   return false;
 }
 
-export async function buildApp(deps: BuildAppDeps): Promise<FastifyInstance> {
+export type AppInstance = Awaited<ReturnType<typeof buildApp>>;
+
+export async function buildApp(deps: BuildAppDeps) {
   const silent = process.env["NODE_ENV"] === "test" || process.env["VITEST"];
   const app = Fastify({
     logger: silent ? false : createLogger(),

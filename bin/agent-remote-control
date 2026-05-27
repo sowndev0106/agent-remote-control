@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+import("../dist/cli/index.js")
+  .then((m) => m.main())
+  .catch((err) => {
+    process.stderr.write(
+      `error: ${err && err.message ? err.message : err}\n` +
+        `(did you run \`pnpm build\`?)\n`,
+    );
+    process.exit(1);
+  });

@@ -1,0 +1,16 @@
+[Unit]
+Description=agent-remote-control (local AI agent control UI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=${NODE_BIN} ${BIN_PATH} start --foreground
+Restart=on-failure
+RestartSec=2
+Environment=NODE_ENV=production
+Environment=PATH=${NODE_PATH_ENV}
+WorkingDirectory=${WORK_DIR}
+
+[Install]
+WantedBy=default.target

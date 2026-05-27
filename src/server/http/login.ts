@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyReply } from "fastify";
 import { readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,7 +7,7 @@ import { SessionStore } from "../core/session.js";
 import { verifyPassword } from "../core/auth.js";
 import { AppError, errEnvelope, okEnvelope } from "../core/errors.js";
 import { issueCsrfToken, CSRF_COOKIE } from "../core/csrf.js";
-import { SESSION_COOKIE } from "../core/app.js";
+import { SESSION_COOKIE, type AppInstance } from "../core/app.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -79,7 +79,7 @@ async function loadLoginHtml(): Promise<string> {
   throw new Error("login.html not found in any candidate location");
 }
 
-export function registerLoginRoutes(app: FastifyInstance, deps: Deps): void {
+export function registerLoginRoutes(app: AppInstance, deps: Deps): void {
   app.get("/login", async (_req, reply) => {
     const html = await loadLoginHtml();
     reply.type("text/html").send(html);
