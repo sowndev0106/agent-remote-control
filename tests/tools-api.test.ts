@@ -134,6 +134,39 @@ async function makeAuthedApp() {
   return { app, cookieHeader, csrfVal, projectId, terminal };
 }
 
+describe("config + security headers", () => {
+  it("GET /api/config returns sanitized config without passwordHash (S08)", async () => {
+    const { app, cookieHeader } = await makeAuthedApp();
+    const r = await app.inject({
+      method: "GET",
+      url: "/api/config",
+      headers: { cookie: cookieHeader },
+    });
+    expect(r.statusCode).toBe(200);
+    const data = r.json().data;
+    expect(data.server.passwordSet).toBe(true);
+    // The secret field itself must be absent (passwordHashAlgorithm is fine).
+    expect(data.server.passwordHash).toBeUndefined();
+    expect(JSON.stringify(data)).not.toMatch(/"passwordHash":/);
+    await app.close();
+  });
+
+  it("sets a strict CSP on the shell and omits it on /api JSON (S08-T10)", async () => {
+    const { app, cookieHeader } = await makeAuthedApp();
+    const shell = await app.inject({ method: "GET", url: "/healthz" });
+    expect(shell.headers["content-security-policy"]).toMatch(/default-src 'self'/);
+    expect(shell.headers["x-content-type-options"]).toBe("nosniff");
+
+    const apiJson = await app.inject({
+      method: "GET",
+      url: "/api/providers",
+      headers: { cookie: cookieHeader },
+    });
+    expect(apiJson.headers["content-security-policy"]).toBeUndefined();
+    await app.close();
+  });
+});
+
 describe("files API", () => {
   it("lists project tree (auth required)", async () => {
     await writeFile(join(root, "README.md"), "hi");
