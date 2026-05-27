@@ -15,9 +15,12 @@ remote action click. Most of this code is ported from
 ## In-Scope Requirements
 
 - REQ-027 through REQ-044 (CDP discovery, launch, attach, mirror, prompt,
-  actions)
+  actions, scroll sync)
 - REQ-092 through REQ-099 (existing session discovery, attach without restart,
-  sync after attach)
+  sync after attach) — **CDP source only**; PTY/wrapper sources land in
+  sprint 05, tmux/screen + unmanaged in sprint 07. The `discover` endpoint
+  built here returns CDP results; later sprints extend it to aggregate other
+  sources behind the same endpoint.
 - REQ-113, REQ-114 (snapshot hash, server-issued action IDs)
 - NFR-003, NFR-004 (DOM sanitization)
 
@@ -63,6 +66,9 @@ remote action click. Most of this code is ported from
   - `POST /api/sessions/:id/actions/:actionId`
   - `GET /api/sessions/:id/conversations`
   - `POST /api/sessions/:id/conversations/:cid/select`
+  - `POST /api/sessions/:id/scroll` (REQ-044) — body `{offset, viewportHeight}`
+    or normalized scroll fraction; only invoked when the user explicitly
+    scrolls the mirror in the web UI.
 - WebSocket channel for snapshot + status + action updates.
 
 ## Tasks
@@ -99,8 +105,16 @@ remote action click. Most of this code is ported from
 - **S03-T11** Port `stopGeneration` and `startNewChat`.
 - **S03-T12** Port `getChatHistory` (scoped DOM scrape) and `selectChat`.
   Mark active conversation when detectable (REQ-041A).
-- **S03-T13** Status + capability reporting: return normalized capabilities
-  per session (REQ-026C). Unknown stays `unknown` until probed.
+- **S03-T13** Status + capability reporting (REQ-035, REQ-026C):
+  - Status fields: connection state, project path, debug port, mode, model,
+    busy state, last error.
+  - Capability flags stay `unknown` until probed, then resolve to `supported`
+    or `unsupported`.
+  - Broadcast `provider.status.changed` whenever any field flips.
+- **S03-T13B** Remote scroll endpoint (REQ-044): accept explicit scroll
+  command from the web UI only; translate to CDP `Input.dispatchMouseEvent`
+  wheel or `Runtime.evaluate` scrollTop assignment on the Antigravity chat
+  container. Never auto-sync desktop → web scroll.
 - **S03-T14** Error normalization (REQ-109, REQ-110): every adapter failure
   returns `{code, operation, message, recoveryAction}`.
 - **S03-T15** WebSocket realtime envelope (REQ-111): emit

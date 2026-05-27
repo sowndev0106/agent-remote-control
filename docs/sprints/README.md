@@ -15,7 +15,7 @@ execute, and verify against named acceptance criteria.
 | [05](sprint-05-pty-wrapper.md) | Managed PTY + Wrapper Adapter | M4 | REQ-045..045E, REQ-094..103 | 5-7 d | ⏸ defer-able |
 | [06](sprint-06-terminal-files.md) | Browser Terminal + File Explorer | M6 (tools) | REQ-056..087A | 6-9 d | parallel to 05 |
 | [07](sprint-07-tmux-screen.md) | tmux/screen Attach + Unmanaged Detection | M5 | REQ-045D, REQ-100..107 | 4-6 d | ⏸ defer-able |
-| [08](sprint-08-realtime-persistence-hardening.md) | Realtime Contracts + Persistence + Hardening | M6/M9 | REQ-088..091, REQ-108..115, all NFR | 4-6 d | ✅ final polish |
+| [08](sprint-08-realtime-persistence-hardening.md) | Realtime Contracts + Persistence + Hardening | M6 (cross-cutting) | REQ-088..091, REQ-108..115, all NFR | 4-6 d | ✅ final polish |
 
 **Total estimate:** ~45-65 working days (≈ 2-3 calendar months solo).
 

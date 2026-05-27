@@ -1,6 +1,6 @@
 # Sprint 08 — Realtime Contracts + Persistence + Hardening
 
-**Milestone:** M6 final + M9
+**Milestone:** M6 (cross-cutting hardening pass)
 **Effort:** 4-6 days
 **Dependencies:** Sprint 01..07 (this is the closing pass)
 
@@ -80,10 +80,13 @@ calling Phase 1 done.
 
 ### Security Hardening
 - **S08-T10** Strict CSP for app shell (NFR-002):
-  - `default-src 'self'`, `script-src 'self'`, `style-src 'self'
-    'unsafe-inline'` (Tailwind only, audit if removable),
+  - `default-src 'self'`, `script-src 'self'`, `style-src 'self'`,
     `connect-src 'self' ws: wss:`, `frame-src 'self'`, `object-src 'none'`,
     `base-uri 'self'`.
+  - Tailwind compiles to class-based CSS at build time, so `'unsafe-inline'`
+    should NOT be needed for `style-src`. Audit any third-party component
+    that injects inline styles; replace or add a nonce instead of relaxing
+    the policy.
   - The mirror iframe is `srcdoc` with its own relaxed CSP — never relax the
     shell CSP.
 - **S08-T11** Sanitization audit (NFR-003, NFR-004): every scraped provider

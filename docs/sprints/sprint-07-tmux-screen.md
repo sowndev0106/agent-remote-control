@@ -20,6 +20,7 @@ guidance.
 - REQ-104 (UI source distinction includes tmux, screen, external unmanaged —
   already wired in sprint 04)
 - REQ-105 (discovery from home screen)
+- REQ-107 (no project path on attach → ask user or block)
 - AC-030, AC-033
 
 ## Out of Scope
@@ -81,18 +82,26 @@ guidance.
   - Report as session record with `source: 'external'`, `attachable: false`,
     `guidance: {message, recommendedCommand}` where the recommended command
     is the wrapper invocation for the detected project (if known via cwd).
-- **S07-T005** Get external process cwd via `/proc/<pid>/cwd` symlink to
+- **S07-T05** Get external process cwd via `/proc/<pid>/cwd` symlink to
   populate `projectPath` when readable.
 - **S07-T06** Discovery integration: `POST /api/sessions/discover` aggregates
   results from CDP, PTY/wrapper registry, tmux, screen, and unmanaged
   scanner. Each entry tagged with `source` per REQ-104.
-- **S07-T07** UI binding (small additions on top of sprint 04):
+- **S07-T07** Missing-project-path attach flow (REQ-107):
+  - When a discovered session is controllable but exposes no `projectPath`,
+    `POST /api/sessions/:id/attach` returns `{ok: false, error: {code:
+    'project_required', ...}}`.
+  - UI shows a project picker modal before completing attach.
+  - When the adapter cannot control the session safely without a project
+    path (e.g. file-context features), attach is blocked entirely with a
+    guidance message recommending re-launch via the wrapper.
+- **S07-T08** UI binding (small additions on top of sprint 04):
   - Session row variants for tmux/screen sources (label + target name).
   - `SessionDiscoveryList` shows "External unmanaged" row with disabled
     Attach button and a guidance card explaining what to run instead
     (REQ-101, AC-030).
   - Settings: configurable tmux/screen target list with add/remove UI.
-- **S07-T008** Tests:
+- **S07-T09** Tests:
   - Configured tmux target detected; non-existent target returns clear error.
   - `send-keys` with shell-special characters does not break out of the
     pane (use `-l` literal mode).

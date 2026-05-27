@@ -116,6 +116,16 @@ real PTYs, and a read-only project file explorer with preview.
   server.
 - **xterm.js + React re-render churn:** keep terminal instances out of React
   state; mount once per tab and use refs (frontend perf rule).
+- **Foreground process detection (REQ-068):** A naive "any child process
+  alive" check fires false positives because shells like zsh/bash leave
+  background helpers. The correct check is `tcgetpgrp(fd)` on the PTY slave
+  fd compared to the shell's PID — if they differ, a foreground job is
+  running. Node has no direct `tcgetpgrp` binding; either link a tiny native
+  add-on or parse `/proc/<shell-pid>/stat` for `tpgid`. Plan for an hour of
+  experimentation here.
+- **Process exit detection:** Listen for `node-pty` `exit` event, surface
+  exit code to the UI, mark the tab closed but keep it visible briefly so
+  the user can read final output (REQ-064).
 
 ## Done Definition
 

@@ -81,8 +81,14 @@ that every later sprint depends on.
 
 - **systemd unit working-dir + PATH:** Need `Environment=PATH=...` so the node
   binary is found under `systemd --user`. Test on a clean Ubuntu install.
-- **Argon2 native build on user machines:** Provide bcrypt fallback (REQ-014A
-  allows it).
+- **Argon2 native build on user machines:** Provide bcrypt or PBKDF2 fallback
+  (REQ-014A allows both).
+- **systemd user service autostart without graphical login:** `systemctl --user
+  enable` only auto-starts on session login. For a headless or SSH-only setup
+  the user needs `loginctl enable-linger $USER` so the service starts at boot
+  and survives logout. The `install` command should detect non-graphical
+  installs and either run `enable-linger` (with user consent) or print
+  guidance.
 
 ## Done Definition
 

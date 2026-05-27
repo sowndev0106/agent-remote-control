@@ -15,11 +15,18 @@ CDP remains the preferred surface when both are available (REQ-045E).
 
 ## In-Scope Requirements
 
-- REQ-045 through REQ-045E (PTY adapter, wrapper command, input + resume)
-- REQ-094A (wrapper-launched sessions as Phase 1 control surface)
+- REQ-045, REQ-045A, REQ-045B, REQ-045C, REQ-045E (managed PTY adapter,
+  wrapper command, input + resume, CDP-preferred dispatch)
+- REQ-094, REQ-094A (managed PTY + wrapper-launched sessions as Phase 1
+  control surfaces)
 - REQ-102, REQ-103 (wrapper commands `antigravity` and `agy`)
-- REQ-104 (session source labels)
+- REQ-104 (session source labels — partial: `managed-pty`, `wrapper`; tmux,
+  screen, external come in sprint 07)
+- REQ-106 (auto-select project when discovered session exposes its path)
 - NFR-012, NFR-013, NFR-013A (reload reconnect, shutdown owned sessions only)
+
+REQ-045D (tmux/screen attach) is **out of scope** for this sprint — it lives
+in sprint 07.
 
 ## Out of Scope
 
@@ -66,11 +73,17 @@ CDP remains the preferred surface when both are available (REQ-045E).
   - Control signals (`SIGINT` → Ctrl+C, `SIGTERM`).
 - **S05-T04** Wrapper CLI (`agent-remote-control antigravity <project>`):
   - Connect to local IPC socket.
-  - Tell server to record an intent to register the next launched
-    Antigravity process for this project.
-  - Spawn Antigravity in foreground, in the user's terminal, with the
-    debug port pre-allocated by the server.
-  - On exit, notify server.
+  - Reserve a debug port from the server.
+  - Spawn Antigravity in foreground, in the **user's existing terminal**
+    (not a server-managed PTY), with `--remote-debugging-port=<port>`.
+  - Register the session with the server after the CDP target appears on the
+    reserved port (or send a register request and let the server poll).
+  - On Antigravity exit, notify server to mark session closed.
+  - **Note:** Because the wrapper does not own a server-side PTY, browser
+    "resume" for a wrapper-launched session means re-attaching via CDP, not
+    reconnecting to a PTY stream. If the wrapper CLI is killed but
+    Antigravity (Electron, detached) keeps running, the CDP session stays
+    valid.
 - **S05-T05** IPC socket server: accept connections from same UID only,
   exposing a tiny RPC for `reserve-port`, `register-session`,
   `unregister-session`. Reject if peer UID differs.
@@ -82,8 +95,12 @@ CDP remains the preferred surface when both are available (REQ-045E).
 - **S05-T07** Ownership tracking: every session record carries an `owned`
   flag (true if app spawned, false if wrapper-registered). Shutdown sequence
   only sends SIGTERM to `owned` PTY children (NFR-013A).
-- **S05-T08** Source labels (REQ-104): `cdp` | `managed-pty` | `wrapper` |
-  `external` (last one stays unset until sprint 07).
+- **S05-T08** Source labels (REQ-104): emit `cdp` | `managed-pty` | `wrapper`
+  in session records this sprint. `tmux`, `screen`, `external` are added by
+  sprint 07.
+- **S05-T08B** Project auto-select on attach (REQ-106): when a managed-PTY or
+  wrapper-launched session carries a project path, attaching to that session
+  from the home screen selects or registers that project automatically.
 - **S05-T09** UI placeholders (just enough for the existing
   `SessionDiscoveryList` to render new sources):
   - Source badge text for `Managed PTY` and `Wrapper`.

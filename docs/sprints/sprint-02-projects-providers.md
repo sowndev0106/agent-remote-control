@@ -53,13 +53,20 @@ work yet — only the registry and stub interfaces.
   - Return entries with `{name, path, isDir, recommendations: []}`.
 - **S02-T04** Recommendation detection: stat each subdir for the 7 marker
   files/dirs (REQ-017). Return as part of browse response.
-- **S02-T05** Manual path entry endpoint: `POST /api/projects` with explicit
-  `confirmManual` flag for paths outside `projects.roots` (REQ-016).
-- **S02-T06** Project lifecycle endpoints:
-  - `POST /api/projects` — register/select.
+- **S02-T05** Project lifecycle endpoints:
+  - `POST /api/projects` — register or select a project. Body shape:
+    `{path: string, confirmManual?: boolean}`. The server validates the path
+    against `projects.roots`; paths outside roots require `confirmManual:
+    true` (REQ-016). Returns the persisted project record with `id`.
   - `GET /api/projects/recent` — list.
   - `DELETE /api/projects/:id` — remove from saved list (do not touch files).
   - `GET /api/projects/:id` — detail incl. last provider, last session ID.
+- **S02-T06** Per-project preference persistence:
+  - `PUT /api/projects/:id/last-provider` — set last selected provider
+    (REQ-019). Called when user changes provider in UI.
+  - `PUT /api/projects/:id/last-session` — set last selected session ID
+    (REQ-020). Called when user attaches/launches a session in sprint 03+.
+  - Both fields stored on the project record; read by `GET /api/projects/:id`.
 - **S02-T07** Provider registry: in-memory list with Antigravity enabled, three
   stubs disabled. `GET /api/providers` returns availability + capability flags.
 - **S02-T08** `IProviderAdapter` interface with the 14 methods from REQ-026.

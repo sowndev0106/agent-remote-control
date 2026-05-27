@@ -28,6 +28,23 @@ This sprint excludes the terminal and file explorer (sprint 06).
 - PTY / wrapper resume UI states (sprint 05 surfaces these via backend; this
   sprint can render them as basic placeholders if needed)
 
+## Sprint Dependencies — Stubs vs Real
+
+This sprint depends on sprint 03 for the CDP adapter HTTP surface but is
+itself depended on by sprints 05 and 06 for the workspace shell. To break the
+cycle:
+
+- **Slash commands `/files` and `/terminal`:** Implemented as palette entries
+  in S04-T14, but they open empty/disabled panels until sprint 06 wires the
+  panel content. After sprint 06 lands, the same command activates the real
+  panel.
+- **Workspace shell reserves panel slots:** `AppShell` allocates layout
+  regions for the terminal dock (bottom) and file explorer secondary panel
+  even though the panel components are empty in this sprint. Sprint 06 fills
+  them in without touching layout code.
+- **Composer file context chips:** Stubbed in S04-T13; sprint 06 (S06-T16)
+  replaces the stub with real chips emitted from the file explorer.
+
 ## Acceptance Criteria
 
 - AC-003: Login required before any workspace data shown.
@@ -104,10 +121,14 @@ This sprint excludes the terminal and file explorer (sprint 06).
 
 ## Risks
 
-- **Sandboxed iframe + remote click overlay:** the click target lives inside
-  the iframe but the action ID is generated server-side. Use postMessage
-  between iframe and parent, or render the overlay layer in the parent and
-  compute coordinates from the iframe's element bounding rects.
+- **Sandboxed iframe + remote click overlay:** Action targets live inside the
+  iframe but the action ID is generated server-side, so the parent must know
+  each button's screen position to position an invisible overlay above it.
+  Approach: iframe uses `sandbox="allow-same-origin"` (no `allow-scripts` —
+  scraped JS cannot execute), parent queries `iframe.contentDocument` for
+  each action element, gets its `getBoundingClientRect()`, and translates to
+  parent viewport by adding `iframe.getBoundingClientRect()` offsets. Re-run
+  on snapshot change and on scroll.
 - **CSP for mirror iframe:** the iframe `srcdoc` content can use its own
   relaxed CSP without weakening the app shell CSP. Document this.
 - **UI volume:** This is the biggest sprint. Keep each component small
