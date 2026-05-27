@@ -58,12 +58,14 @@ describe("login route", () => {
     await app.close();
   });
 
-  it("GET /login serves HTML", async () => {
+  it("GET /login serves HTML (static fallback or SPA index)", async () => {
     const { app } = await makeApp();
     const r = await app.inject({ method: "GET", url: "/login" });
     expect(r.statusCode).toBe(200);
     expect(r.headers["content-type"]).toMatch(/text\/html/);
-    expect(r.body).toMatch(/Sign in/i);
+    // Either the static login form ("Sign in" text) or the React mount point
+    // — both are valid since the SPA owns the login screen once built.
+    expect(r.body).toMatch(/(Sign in|id="root")/i);
     await app.close();
   });
 

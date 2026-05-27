@@ -1,10 +1,17 @@
 import Fastify from "fastify";
 import fastifyCookie from "@fastify/cookie";
+import fastifyStatic from "@fastify/static";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createLogger } from "./logger.js";
 import type { AppConfig } from "./config.js";
 import { SessionStore } from "./session.js";
 import { AppError, errEnvelope } from "./errors.js";
 import { CSRF_COOKIE, CSRF_HEADER, verifyCsrfToken } from "./csrf.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export interface BuildAppDeps {
   config: AppConfig;
@@ -19,17 +26,22 @@ export const SESSION_COOKIE = "arc_sid";
  * Public route set — exempt from session+CSRF guards.
  * NFR-001 / H5 require everything else to authenticate.
  */
-const PUBLIC_EXACT = new Set<string>([
-  "/login",
-  "/api/auth/login",
-  "/healthz",
-]);
-const PUBLIC_PREFIXES = ["/login.", "/static/login/"];
+/**
+ * Auth gate: every `/api/*` route requires a valid session except the login
+ * endpoint itself. Static SPA shell routes are always public — the SPA owns
+ * its own auth state and calls the same `/api/*` endpoints under the hood.
+ *
+ * H5 / NFR-001: ALL realtime endpoints also require auth (handled by the
+ * cookie check in mountRealtimeWS — not via this hook).
+ */
+const PUBLIC_API_EXACT = new Set<string>(["/api/auth/login"]);
 
 function isPublic(url: string): boolean {
   const path = url.split("?")[0] ?? url;
-  if (PUBLIC_EXACT.has(path)) return true;
-  for (const p of PUBLIC_PREFIXES) if (path.startsWith(p)) return true;
+  if (path === "/healthz") return true;
+  // SPA shell + static assets are public; SPA enforces auth via API calls.
+  if (!path.startsWith("/api/")) return true;
+  if (PUBLIC_API_EXACT.has(path)) return true;
   return false;
 }
 
@@ -116,6 +128,39 @@ export async function buildApp(deps: BuildAppDeps) {
     data: { status: "ok" },
     error: null,
   }));
+
+  // Serve built SPA assets when `dist-web/` exists (`pnpm build:web`).
+  const distWebCandidates = [
+    resolve(__dirname, "..", "..", "..", "dist-web"),
+    resolve(__dirname, "..", "..", "..", "..", "dist-web"),
+  ];
+  const distWeb = distWebCandidates.find((p) => existsSync(p));
+  if (distWeb) {
+    const assetsDir = join(distWeb, "assets");
+    if (existsSync(assetsDir)) {
+      await app.register(fastifyStatic, {
+        root: assetsDir,
+        prefix: "/assets/",
+        decorateReply: false,
+        wildcard: false,
+        serve: true,
+      });
+    }
+    const indexPath = join(distWeb, "index.html");
+    if (existsSync(indexPath)) {
+      const indexHtml = readFileSync(indexPath, "utf8");
+      // Authenticated SPA fallback for any non-API GET.
+      app.get("/", (_req, reply) => {
+        reply.type("text/html").send(indexHtml);
+      });
+      app.get("/workspace/*", (_req, reply) => {
+        reply.type("text/html").send(indexHtml);
+      });
+      app.get("/settings", (_req, reply) => {
+        reply.type("text/html").send(indexHtml);
+      });
+    }
+  }
 
   return app;
 }

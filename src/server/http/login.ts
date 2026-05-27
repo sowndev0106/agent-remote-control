@@ -62,8 +62,12 @@ function setCsrfCookie(reply: FastifyReply, token: string, https: boolean): void
 }
 
 async function loadLoginHtml(): Promise<string> {
-  // Search candidates so we work in both `tsx` dev and compiled `dist` runs.
+  // Prefer the built SPA index when present; fall back to the bootstrap
+  // static login (used by smoke tests and when the SPA is not built).
   const candidates = [
+    // dist-web from `pnpm build:web`
+    join(__dirname, "..", "..", "..", "dist-web", "index.html"),
+    join(__dirname, "..", "..", "..", "..", "dist-web", "index.html"),
     // src/server/http/login.ts → src/web/login.html
     join(__dirname, "..", "..", "web", "login.html"),
     // dist/server/http/login.js → src/web/login.html (rooted at repo)
