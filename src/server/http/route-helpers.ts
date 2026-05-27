@@ -61,3 +61,20 @@ export function requireBodyString(
   }
   return v;
 }
+
+/**
+ * Generic variant of `rejectIfMissing` for any store with a `get(id)` method
+ * (e.g. `TerminalService`). The caller supplies the AppError to send when the
+ * lookup misses, so the error code/operation/message stay route-specific.
+ */
+export function rejectIfMissingFrom<T>(
+  store: { get(id: string): T | undefined },
+  id: string,
+  reply: FastifyReply,
+  notFoundError: AppError,
+): T | null {
+  const v = store.get(id);
+  if (v) return v;
+  reply.code(notFoundError.httpStatus).send(errEnvelope(notFoundError));
+  return null;
+}
