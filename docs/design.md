@@ -55,6 +55,7 @@ For Phase 1, the app must control Antigravity. It should use the opencode web ex
 13. HTTPS certificates are generated on demand, not during default install.
 14. MVP persistence uses local JSON files. SQLite is reserved for later if session/event history becomes too large for simple files.
 15. Phase 1 includes a browser terminal panel. It runs real local shell sessions through a server-managed PTY and is protected by the same app authentication.
+16. Phase 1 includes a project folder/file explorer. It is read-only by default and is scoped to the selected project directory.
 
 ## opencode Serve Analysis
 
@@ -183,6 +184,7 @@ The UI talks only to the app server. Provider-specific details stay inside adapt
 11. UI shows project/session sidebar plus central Antigravity mirror/timeline.
 12. User sends prompts, clicks action buttons, approves/denies requests, stops generation, switches conversations, and watches status from the browser.
 13. User opens one or more terminal tabs for the selected project and runs local commands without leaving the web UI.
+14. User opens the file explorer to browse folders and inspect files in the selected project.
 
 ## Project Picker Requirements
 
@@ -202,6 +204,38 @@ The project picker must:
 - Persist last provider per project.
 - Persist last selected conversation/session per project when possible.
 - Support removing projects from the saved list without deleting files.
+
+## File Explorer Requirements
+
+Phase 1 must include a folder/file explorer for the selected project:
+
+- File explorer opens from the main workspace UI.
+- It displays a tree rooted at the selected project directory.
+- It supports expanding/collapsing folders.
+- It shows file and folder icons or type indicators.
+- It hides common heavy folders by default:
+  - `.git`
+  - `node_modules`
+  - `dist`
+  - `build`
+  - `.next`
+  - `.cache`
+  - additional configured ignore folders
+- Hidden folders can be revealed with a toggle.
+- It supports refresh for a folder or the whole tree.
+- It supports basic fuzzy file search within the project.
+- It opens text files in a read-only viewer.
+- It detects binary files and shows metadata instead of raw content.
+- It limits preview size for large files and offers an explicit "open anyway" action.
+- It shows useful metadata:
+  - path relative to project
+  - file size
+  - modified time
+  - binary/text state
+- It supports copying relative path and absolute path.
+- It supports adding an opened file path as prompt context when the active provider adapter supports prompt context.
+- It does not edit, rename, delete, move, or create files in MVP.
+- It should update when terminal/provider actions change files, using manual refresh first and file watching later.
 
 ## Antigravity CDP MVP
 
@@ -289,6 +323,7 @@ Desktop layout:
 - Right action/status panel.
 - Bottom composer.
 - Resizable terminal panel with tabs, located below the mirror/timeline or available as a full terminal view.
+- File explorer panel available as a left/side panel or dedicated tab, with read-only file viewer.
 
 Main screen states:
 
@@ -325,6 +360,7 @@ The side panel should show:
 - last error
 - adapter logs
 - terminal session count
+- selected file/folder metadata when file explorer is active
 
 Mobile layout:
 
@@ -340,6 +376,8 @@ The app should expose a slash command palette inspired by opencode and Antigravi
 - `/new` starts a new provider conversation.
 - `/stop` stops current generation.
 - `/project` opens project picker.
+- `/files` opens or focuses the file explorer.
+- `/open` opens file search.
 - `/provider` opens provider selector.
 - `/model` opens model selector if adapter supports it.
 - `/mode` opens Antigravity mode selector if adapter supports it.
@@ -376,6 +414,11 @@ Future commands:
 - Treat terminal access as full local shell access; when binding `0.0.0.0`, startup warnings must explicitly mention terminal risk.
 - Allow terminal to be disabled by config.
 - Do not persist terminal output by default.
+- Restrict file explorer reads to the selected project root and explicitly configured project folders.
+- Resolve symlinks and reject path traversal outside allowed roots.
+- Do not expose arbitrary filesystem browsing from the file explorer after a project is selected; project selection is the only broad filesystem browsing flow.
+- Keep file explorer read-only in MVP.
+- Do not persist file contents by default.
 - Do not auto-exempt LAN clients in MVP; all clients authenticate.
 - Log security-relevant startup warnings.
 
@@ -400,6 +443,12 @@ MVP config fields:
   "projects": {
     "roots": ["~"],
     "recentLimit": 50
+  },
+  "fileExplorer": {
+    "enabled": true,
+    "showHidden": false,
+    "maxPreviewBytes": 524288,
+    "ignore": [".git", "node_modules", "dist", "build", ".next", ".cache"]
   },
   "terminal": {
     "enabled": true,
@@ -430,6 +479,8 @@ The app should store:
 - recent projects
 - provider preferences per project
 - active sessions/conversations metadata
+- file explorer expanded folder state
+- recently opened file paths
 - terminal tab metadata for reconnect
 - app settings
 - adapter logs
@@ -440,6 +491,7 @@ It should not store:
 - provider OAuth tokens copied from desktop apps
 - raw provider API keys unless explicitly added later with secure storage
 - full mirrored DOM history by default
+- file contents by default
 - terminal scrollback/output by default
 
 ## Install And Runtime
@@ -484,6 +536,11 @@ Phase 1 is complete when:
 - Web UI is reachable on configured localhost port.
 - Login requires app password.
 - User can add/select project folders and see recent projects.
+- User can browse the selected project through a folder/file explorer.
+- User can expand/collapse folders and refresh the tree.
+- User can open text files in a read-only viewer.
+- File explorer blocks path traversal outside the selected project.
+- Binary or oversized files do not render raw content by default.
 - Provider selector shows Antigravity enabled and other providers disabled/future.
 - App can launch or attach to Antigravity debug mode for selected project.
 - Web UI displays live Antigravity conversation mirror.
@@ -509,6 +566,8 @@ Phase 1 is complete when:
 - CDP requires launching Antigravity with remote debugging enabled.
 - Browser rendering of cloned DOM can be heavy.
 - Browser terminal grants remote shell access if auth or network exposure is misconfigured.
+- File explorer can expose sensitive local files if project scoping or symlink handling is wrong.
+- Very large repositories can make tree loading and search slow.
 - PTY parsing may not produce reliable structured state.
 - Official Antigravity SDK/API may evolve, requiring adapter changes.
 
@@ -519,6 +578,8 @@ Mitigations:
 - Keep a raw mirror fallback even when structured parsing fails.
 - Store adapter logs for troubleshooting.
 - Keep terminal disabled-by-config and clearly warn when the server binds beyond loopback.
+- Keep file explorer scoped to selected project roots and make it read-only for MVP.
+- Ignore heavy directories by default and use lazy folder loading.
 - Build adapter contract before adding more providers.
 
 ## Roadmap
@@ -529,6 +590,7 @@ Phase 1:
 - password auth
 - project picker
 - opencode-style web UI
+- project file explorer
 - browser terminal panel with tabs
 - Antigravity CDP adapter
 - live mirror, prompt, stop, remote actions
@@ -564,3 +626,4 @@ Phase 4:
 - HTTPS behavior: on-demand certificate generation.
 - Persistence backend: JSON files for MVP.
 - Browser terminal: enabled by default, starts in the selected project directory, uses `$SHELL` or `/bin/bash`, and does not persist terminal output.
+- File explorer: enabled by default, read-only in MVP, scoped to the selected project root, lazy-loads folders, and does not persist file contents.
