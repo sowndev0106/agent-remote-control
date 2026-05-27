@@ -54,6 +54,7 @@ For Phase 1, the app must control Antigravity. It should use the opencode web ex
 12. MVP launch behavior is attach-first. If Antigravity is not already available on a debug port, the UI offers an explicit "Launch Antigravity" action for the selected project.
 13. HTTPS certificates are generated on demand, not during default install.
 14. MVP persistence uses local JSON files. SQLite is reserved for later if session/event history becomes too large for simple files.
+15. Phase 1 includes a browser terminal panel. It runs real local shell sessions through a server-managed PTY and is protected by the same app authentication.
 
 ## opencode Serve Analysis
 
@@ -141,6 +142,7 @@ Agent Remote Control Server
   +-- Provider registry
   +-- Session/event store
   +-- File/project service
+  +-- Terminal PTY service
   +-- Realtime event bus
   |
   +-- Antigravity CDP Adapter       Phase 1 priority
@@ -180,6 +182,7 @@ The UI talks only to the app server. Provider-specific details stay inside adapt
 10. App launches or detects Antigravity debug mode and connects CDP.
 11. UI shows project/session sidebar plus central Antigravity mirror/timeline.
 12. User sends prompts, clicks action buttons, approves/denies requests, stops generation, switches conversations, and watches status from the browser.
+13. User opens one or more terminal tabs for the selected project and runs local commands without leaving the web UI.
 
 ## Project Picker Requirements
 
@@ -236,7 +239,7 @@ The Antigravity CDP adapter must:
 
 ## PTY Adapter Requirement
 
-The PTY adapter is not the primary MVP path, but the design must reserve it. It should support terminal-first providers such as `agy`, Claude Code, Codex, and opencode TUI.
+The provider PTY adapter is separate from the user-facing browser terminal. It is not the primary Antigravity MVP path, but the design must reserve it. It should support terminal-first providers such as `agy`, Claude Code, Codex, and opencode TUI.
 
 The PTY adapter should eventually:
 
@@ -247,6 +250,35 @@ The PTY adapter should eventually:
 - Parse basic states from output when possible.
 - Provide fallback manual terminal mode when structured state is unavailable.
 
+## Browser Terminal Requirements
+
+Phase 1 must include a terminal experience similar to the screenshot reference:
+
+- Terminal panel can be opened from the main workspace UI.
+- Terminal panel supports multiple tabs.
+- Each tab has:
+  - stable title such as `Terminal 1`
+  - close action
+  - active-state indicator
+  - optional rename later
+- A plus action creates a new terminal tab.
+- New terminal sessions start in the selected project directory.
+- Terminal backend creates a real pseudo-terminal attached to the user's default shell from `$SHELL`, falling back to `/bin/bash`.
+- Terminal frontend uses a browser terminal renderer such as xterm.js.
+- Browser and backend communicate through authenticated WebSocket.
+- Terminal supports:
+  - keyboard input
+  - copy and paste
+  - scrollback
+  - terminal resize
+  - process exit detection
+  - reconnect display for still-running sessions when the browser reloads
+- Terminal sessions are scoped to the current logged-in app user.
+- Terminal output is not persisted by default; only tab metadata may be persisted for reconnect.
+- Closing a terminal tab terminates its PTY process after confirmation if a foreground process is still running.
+- Terminal can be disabled in config for users who only want AI-provider remote control.
+- Mobile UI exposes terminal as a full-screen drawer or tab because split panes are too cramped on phones.
+
 ## Web UI Requirements
 
 Desktop layout:
@@ -256,6 +288,7 @@ Desktop layout:
 - Main live mirror/timeline.
 - Right action/status panel.
 - Bottom composer.
+- Resizable terminal panel with tabs, located below the mirror/timeline or available as a full terminal view.
 
 Main screen states:
 
@@ -291,6 +324,7 @@ The side panel should show:
 - pending actions
 - last error
 - adapter logs
+- terminal session count
 
 Mobile layout:
 
@@ -311,6 +345,7 @@ The app should expose a slash command palette inspired by opencode and Antigravi
 - `/mode` opens Antigravity mode selector if adapter supports it.
 - `/history` opens conversation selector.
 - `/actions` focuses pending action panel.
+- `/terminal` opens or focuses the browser terminal panel.
 - `/settings` opens app settings.
 
 Future commands:
@@ -320,7 +355,6 @@ Future commands:
 - `/permissions`
 - `/agents`
 - `/tasks`
-- `/terminal`
 - `/fork`
 - `/compact`
 - `/undo`
@@ -338,6 +372,10 @@ Future commands:
 - Sanitize any DOM snapshot before rendering.
 - Escape any scraped title/text inserted into app-owned DOM.
 - Protect WebSocket/SSE endpoints with the same auth session.
+- Protect terminal WebSocket endpoints with the same auth session.
+- Treat terminal access as full local shell access; when binding `0.0.0.0`, startup warnings must explicitly mention terminal risk.
+- Allow terminal to be disabled by config.
+- Do not persist terminal output by default.
 - Do not auto-exempt LAN clients in MVP; all clients authenticate.
 - Log security-relevant startup warnings.
 
@@ -363,6 +401,13 @@ MVP config fields:
     "roots": ["~"],
     "recentLimit": 50
   },
+  "terminal": {
+    "enabled": true,
+    "shell": "",
+    "maxTabs": 8,
+    "scrollback": 10000,
+    "idleTimeoutMs": 3600000
+  },
   "providers": {
     "antigravity": {
       "enabled": true,
@@ -385,6 +430,7 @@ The app should store:
 - recent projects
 - provider preferences per project
 - active sessions/conversations metadata
+- terminal tab metadata for reconnect
 - app settings
 - adapter logs
 - auth session metadata
@@ -394,6 +440,7 @@ It should not store:
 - provider OAuth tokens copied from desktop apps
 - raw provider API keys unless explicitly added later with secure storage
 - full mirrored DOM history by default
+- terminal scrollback/output by default
 
 ## Install And Runtime
 
@@ -426,7 +473,7 @@ Roadmap:
 - Multi-user auth/RBAC.
 - Cloud-hosted relay service.
 - Provider token management.
-- Editing local files directly from the app outside provider actions.
+- App-specific file editing outside provider actions or explicit terminal commands.
 - Replacing Antigravity desktop or CLI.
 
 ## Acceptance Criteria
@@ -445,6 +492,12 @@ Phase 1 is complete when:
 - New conversation action works when Antigravity exposes it.
 - Conversation history can be listed/selected when scrapeable.
 - Remote approval/action buttons work for common Allow/Deny/Run/Review cases.
+- User can open a terminal panel for the selected project.
+- User can create, switch, and close terminal tabs.
+- Terminal starts in the selected project directory.
+- Terminal can run common commands such as `pwd`, `ls`, and project test commands.
+- Terminal resizes correctly when the browser panel changes size.
+- Terminal WebSocket requires authenticated session.
 - Adapter status and errors are visible.
 - Binding defaults to `127.0.0.1`.
 - Binding `0.0.0.0` requires explicit config and non-default password.
@@ -455,6 +508,7 @@ Phase 1 is complete when:
 - Remote click targeting is heuristic.
 - CDP requires launching Antigravity with remote debugging enabled.
 - Browser rendering of cloned DOM can be heavy.
+- Browser terminal grants remote shell access if auth or network exposure is misconfigured.
 - PTY parsing may not produce reliable structured state.
 - Official Antigravity SDK/API may evolve, requiring adapter changes.
 
@@ -464,6 +518,7 @@ Mitigations:
 - Provide manual refresh and reconnect controls.
 - Keep a raw mirror fallback even when structured parsing fails.
 - Store adapter logs for troubleshooting.
+- Keep terminal disabled-by-config and clearly warn when the server binds beyond loopback.
 - Build adapter contract before adding more providers.
 
 ## Roadmap
@@ -474,13 +529,13 @@ Phase 1:
 - password auth
 - project picker
 - opencode-style web UI
+- browser terminal panel with tabs
 - Antigravity CDP adapter
 - live mirror, prompt, stop, remote actions
 
 Phase 2:
 
 - PTY adapter for `agy`
-- terminal panel
 - better parsed timeline/actions
 - slash command expansion
 - skills/MCP screens for Antigravity where supported
@@ -508,3 +563,4 @@ Phase 4:
 - Antigravity startup behavior: attach first, launch only after explicit user action.
 - HTTPS behavior: on-demand certificate generation.
 - Persistence backend: JSON files for MVP.
+- Browser terminal: enabled by default, starts in the selected project directory, uses `$SHELL` or `/bin/bash`, and does not persist terminal output.
