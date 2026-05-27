@@ -21,6 +21,10 @@ import { mountTerminalWS } from "./core/realtime/terminal-ws.js";
 import { AntigravityCdpAdapter } from "./adapters/antigravity/index.js";
 import { AntigravityPtyAdapter } from "./adapters/antigravity/pty.js";
 import { AntigravityWrapperAdapter } from "./adapters/antigravity/wrapper.js";
+import { AntigravityTmuxAdapter } from "./adapters/antigravity/tmux.js";
+import { AntigravityScreenAdapter } from "./adapters/antigravity/screen.js";
+import { UnmanagedDetector } from "./adapters/antigravity/unmanaged.js";
+import { SessionDiscoveryAggregator } from "./domains/discovery.js";
 import { DebugPortPool, startIpcServer } from "./ipc/wire.js";
 import type { IpcServer } from "./ipc/server.js";
 import { TerminalService } from "./domains/terminal.js";
@@ -68,6 +72,27 @@ export async function startServer(): Promise<void> {
     maxTabs: config.terminal.maxTabs,
     scrollback: config.terminal.scrollback,
   });
+  const tmux = new AntigravityTmuxAdapter({
+    sessions: sessionsLite,
+    targets: () => config.providers.antigravity.tmuxTargets,
+  });
+  const screen = new AntigravityScreenAdapter({
+    sessions: sessionsLite,
+    targets: () => config.providers.antigravity.screenTargets,
+  });
+  // owned/wrapper PIDs derive from the live session registry (best-effort).
+  const unmanaged = new UnmanagedDetector({
+    sessions: sessionsLite,
+    ownedPids: () => new Set(),
+    wrapperPids: () => new Set(),
+    processName: config.providers.antigravity.command,
+  });
+  const discovery = new SessionDiscoveryAggregator({
+    cdp: antigravity,
+    tmux,
+    screen,
+    unmanaged,
+  });
 
   const app = await buildApp({ config, configPath, secret, sessions });
   registerLoginRoutes(app, { config, sessions });
@@ -80,6 +105,7 @@ export async function startServer(): Promise<void> {
     pty,
     portPool,
     terminal,
+    discovery,
     config,
   });
 

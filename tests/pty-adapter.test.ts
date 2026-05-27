@@ -22,10 +22,12 @@ describe("spawnPty (shared PTY helper)", () => {
     const handle = spawnPty({ command: "cat" });
     const chunks: string[] = [];
     handle.onData((c) => chunks.push(c));
+    const exited = new Promise<void>((resolve) => handle.onExit(() => resolve()));
     handle.write("ping\n");
     await new Promise((r) => setTimeout(r, 200));
-    handle.kill("SIGTERM");
     expect(chunks.join("")).toContain("ping");
+    handle.kill("SIGTERM");
+    await exited;
   });
 });
 

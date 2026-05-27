@@ -6,11 +6,13 @@ import type { ProjectStore } from "../domains/projects.js";
 import type { SessionStoreLite } from "../domains/sessions.js";
 import type { IProviderAdapter } from "../adapters/IProviderAdapter.js";
 import type { ProviderId } from "../domains/types.js";
+import type { SessionDiscoveryAggregator } from "../domains/discovery.js";
 
 interface Deps {
   antigravity: AntigravityCdpAdapter;
   projects: ProjectStore;
   sessions: SessionStoreLite;
+  discovery: SessionDiscoveryAggregator;
 }
 
 function getAdapter(deps: Deps, providerId: ProviderId): IProviderAdapter {
@@ -42,12 +44,14 @@ export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
     Body: { projectId?: string };
   }>("/api/sessions/discover", async (req, reply) => {
     const providerId = req.query.provider ?? "antigravity";
-    const adapter = getAdapter(deps, providerId);
+    // Validate provider is enabled (throws for disabled providers).
+    getAdapter(deps, providerId);
     const projectId = req.body?.projectId;
     const projectPath = projectId
       ? deps.projects.get(projectId)?.path ?? ""
       : "";
-    const sessions = await adapter.listDiscoveredSessions(projectPath);
+    // Aggregate across CDP, tmux, screen, and unmanaged sources (REQ-104/105).
+    const sessions = await deps.discovery.discover(projectPath);
     reply.send(okEnvelope({ sessions }));
   });
 

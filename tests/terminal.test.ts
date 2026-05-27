@@ -3,8 +3,11 @@ import { TerminalService } from "../src/server/domains/terminal.js";
 import { AppError } from "../src/server/core/errors.js";
 
 let svc: TerminalService;
-afterEach(() => {
+afterEach(async () => {
   svc?.shutdown();
+  // Let node-pty finish tearing down its native handles before the worker
+  // exits — avoids an intermittent Napi teardown abort.
+  await new Promise((r) => setTimeout(r, 50));
 });
 
 function make(overrides: Partial<{ enabled: boolean; maxTabs: number }> = {}) {
