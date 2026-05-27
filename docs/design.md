@@ -92,11 +92,17 @@ Rail behavior:
 When no project is selected, the app shows a project-first home screen:
 
 - recent project list
+- running or discovered AI sessions
 - open folder action
 - browse folder dialog
 - recommended folder markers
 - provider availability summary
 - app service status
+
+If a running Antigravity session is discovered before project selection, the
+home screen should offer Attach when the session is controllable. When the
+session exposes its project path, attaching should select that project
+automatically.
 
 The home screen should not be marketing content. It should be a functional
 launcher.
@@ -147,6 +153,9 @@ events.
 The default secondary panel is the session or conversation sidebar:
 
 - new session action
+- discovered sessions
+- active session badge
+- session source badge: CDP, managed PTY, wrapper, or unmanaged
 - current conversation
 - recent conversations when scrapeable
 - generation status per active session
@@ -154,6 +163,41 @@ The default secondary panel is the session or conversation sidebar:
 
 When Antigravity conversation history cannot be detected, the sidebar should
 show a clear unavailable state while keeping the active session usable.
+
+## Existing Sessions Layout
+
+The workspace must prefer attach before launch when existing sessions are
+available.
+
+Discovered session list:
+
+```text
++------------------------------------------------+
+| Sessions                                       |
++------------------------------------------------+
+| Active  Antigravity  CDP  :9000  /project-a    |
+| Idle    Antigravity  CDP  :9001  /project-b    |
+| Busy    Antigravity  PTY  managed /project-c   |
+| Seen    Antigravity  external unmanaged        |
++------------------------------------------------+
+| Attach | Launch New                            |
++------------------------------------------------+
+```
+
+Session rows should show:
+
+- provider
+- project path when detectable
+- source type
+- active or busy state
+- pending action count when detectable
+- attach action when controllable
+- guidance action when unmanaged
+
+If the user has Antigravity open in an external terminal, the UI can show it as
+an unmanaged process when detectable. Full interaction is available only if that
+session exposes CDP, was launched by the app, or runs inside a supported
+terminal control surface such as tmux/screen.
 
 ## File Explorer Panel
 
@@ -256,8 +300,10 @@ shows an attach screen:
 
 - selected project path
 - Antigravity provider card enabled
+- discovered existing sessions first
 - Attach to running Antigravity action
 - Launch Antigravity action
+- unmanaged external process guidance when detected
 - detected CDP port list when available
 - clear troubleshooting status
 
@@ -298,6 +344,8 @@ Required states:
 - logged out
 - no project selected
 - project selected with no provider session
+- existing sessions discovered
+- unmanaged external terminal session detected
 - connecting to provider
 - provider connected
 - provider disconnected

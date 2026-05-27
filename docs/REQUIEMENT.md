@@ -50,6 +50,8 @@ Phase 1 MUST include:
 - Provider selector with Antigravity enabled.
 - Claude, Codex, and opencode visible as future or disabled providers.
 - Antigravity remote control through the CDP adapter first.
+- Discovery and attach for existing Antigravity sessions, including active
+  sessions, when a supported control surface is available.
 - Reserved PTY adapter path for Antigravity CLI and terminal-first providers.
 - Opencode-style web workspace.
 - Live Antigravity mirror or timeline.
@@ -85,6 +87,8 @@ User jobs:
 - Select a project and provider.
 - Watch the provider session live.
 - Send prompts and approvals remotely.
+- See existing local AI sessions and attach to an active one without restarting
+  it when possible.
 - Browse project files without leaving the UI.
 - Run terminal commands inside the selected project from the browser.
 
@@ -186,6 +190,7 @@ REQ-026: The common provider adapter interface SHOULD support:
 
 ```text
 detect()
+listDiscoveredSessions(project)
 start(project, options)
 attach(session)
 stop(session)
@@ -200,6 +205,70 @@ performAction(session, actionID)
 dispose(session)
 ```
 
+### Existing Session Discovery And Sync
+
+REQ-092: The app MUST discover all existing Antigravity sessions that expose a
+supported control surface.
+
+REQ-093: Supported Phase 1 control surfaces MUST include Antigravity CDP debug
+targets.
+
+REQ-094: Supported Phase 1 control surfaces SHOULD include app-managed PTY
+sessions started from the browser terminal or app wrapper command.
+
+REQ-095: The UI MUST show discovered sessions before asking the user to launch a
+new one.
+
+REQ-096: The UI MUST identify which discovered session appears active when the
+adapter can detect active generation, focus, pending actions, or recent
+activity.
+
+REQ-097: The user MUST be able to attach to a discovered active session without
+restarting it.
+
+REQ-098: After attach, the app MUST sync the current visible session state,
+including mirror snapshot, busy state, pending actions, and conversation
+metadata when detectable.
+
+REQ-099: The app MUST keep syncing attached sessions until the provider
+disconnects, the user detaches, or the app shuts down.
+
+REQ-100: If Antigravity is running in an external terminal but does not expose
+CDP, tmux/screen control, or an app-managed PTY, the app MUST NOT claim full
+interactive attach support.
+
+REQ-101: For unmanaged external terminal processes, the app SHOULD detect the
+process when possible and show it as read-only or unmanaged with clear attach
+instructions.
+
+REQ-102: The app SHOULD provide wrapper commands for future reliable terminal
+sync, for example:
+
+```text
+agent-remote-control antigravity <project>
+agent-remote-control agy <project>
+```
+
+REQ-103: Wrapper-launched terminal provider sessions MUST be registered with
+the app so they can be resumed and controlled from the browser.
+
+REQ-104: The app MUST distinguish session source in the UI:
+
+- CDP session
+- app-managed PTY session
+- wrapper-launched session
+- external unmanaged process
+
+REQ-105: Existing session discovery MUST run from the home screen before a
+project is selected.
+
+REQ-106: When a discovered session exposes its project path, attaching to that
+session MUST select or register that project automatically.
+
+REQ-107: When a discovered session does not expose its project path, the UI MUST
+allow attach only if the adapter can still control it safely; otherwise it MUST
+ask the user to choose the matching project or relaunch through a managed path.
+
 ### Antigravity Provider
 
 REQ-027: Phase 1 MUST implement the Antigravity provider.
@@ -209,6 +278,9 @@ mirroring and remote action control.
 
 REQ-029: The adapter MUST detect existing Antigravity debug targets on
 configured ports.
+
+REQ-029A: The adapter MUST list all matching Antigravity CDP targets, not only
+the first target.
 
 REQ-030: The default Antigravity debug port MUST be `9000`.
 
@@ -242,6 +314,9 @@ control.
 
 REQ-041: The adapter SHOULD list and select conversation history when it is
 detectable through the UI.
+
+REQ-041A: The adapter SHOULD mark the currently active Antigravity conversation
+when it is detectable through the UI or CDP target metadata.
 
 REQ-042: The adapter MUST relay common remote action clicks, including:
 
@@ -434,6 +509,7 @@ REQ-090: The app MUST persist:
 - recent projects
 - provider preferences per project
 - selected session metadata when available
+- discovered session metadata when safe to persist
 - file explorer expanded folder state
 - recently opened file paths
 - terminal tab metadata for reconnect
@@ -448,6 +524,7 @@ REQ-091: The app MUST NOT persist by default:
 - full mirrored DOM history
 - file contents
 - terminal scrollback or output
+- unmanaged external terminal output
 
 ## Non-Functional Requirements
 
@@ -484,6 +561,9 @@ NFR-011: Snapshot polling MUST not block the whole server.
 
 NFR-012: Browser reload MUST reconnect to existing provider and terminal
 sessions when possible.
+
+NFR-012A: Attaching to an existing active session MUST not restart that session
+unless the user explicitly chooses a launch or restart action.
 
 NFR-013: App shutdown MUST close owned provider launches and PTY sessions
 cleanly when possible.
@@ -615,23 +695,36 @@ AC-026: Binding `0.0.0.0` requires explicit config and a non-default password.
 AC-027: If port `4096` is busy, the app shows a clear error and does not kill
 the existing process.
 
+AC-028: If multiple Antigravity CDP sessions are running, the UI lists all
+discovered sessions.
+
+AC-029: A user can attach to an already active Antigravity CDP session and see
+its current state without restarting it.
+
+AC-030: If Antigravity is running in an unmanaged external terminal, the UI does
+not claim full control and shows the required wrapper, CDP, or tmux/screen
+attach path.
+
 ## Requirement Trace
 
 Phase 1 implementation must start with these slices:
 
 1. Install/runtime/auth base: REQ-001 through REQ-014.
 2. Project registry and provider selector: REQ-015 through REQ-026.
-3. Antigravity CDP control: REQ-027 through REQ-045.
-4. Web workspace and slash commands: REQ-046 through REQ-055.
-5. Browser terminal: REQ-056 through REQ-070.
-6. File explorer: REQ-071 through REQ-087.
-7. Persistence and hardening: REQ-088 through REQ-091 plus all NFRs.
+3. Existing session discovery: REQ-092 through REQ-107.
+4. Antigravity CDP control: REQ-027 through REQ-045.
+5. Web workspace and slash commands: REQ-046 through REQ-055.
+6. Browser terminal: REQ-056 through REQ-070.
+7. File explorer: REQ-071 through REQ-087.
+8. Persistence and hardening: REQ-088 through REQ-091 plus all NFRs.
 
 ## Roadmap After Phase 1
 
 Phase 2:
 
 - Antigravity CLI PTY adapter.
+- Wrapper-launched terminal provider sessions.
+- tmux/screen attach support for terminal provider sessions.
 - Better structured parsing of Antigravity events.
 - File watching for explorer refresh.
 - SQLite if JSON persistence becomes limiting.
@@ -662,5 +755,8 @@ Phase 4:
 - Browser terminal is part of Phase 1.
 - Project file explorer is part of Phase 1.
 - File explorer is read-only in MVP.
+- Existing Antigravity CDP sessions can be attached and synced in MVP.
+- Existing unmanaged terminal processes cannot be fully controlled unless they
+  expose CDP, tmux/screen, or an app-managed PTY/wrapper surface.
 - Persistence is JSON in MVP.
 - The app implements its own server and does not shell out to `opencode serve`.

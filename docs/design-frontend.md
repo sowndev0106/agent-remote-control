@@ -30,7 +30,8 @@ MVP routes:
 Route rules:
 
 - Unauthenticated users are redirected to `/login`.
-- The root route shows recent projects or redirects to the last active project.
+- The root route shows recent projects and discovered sessions, or redirects to
+  the last active project when configured.
 - Workspace route requires a valid project ID.
 - Unknown projects show a recoverable project-not-found state.
 
@@ -41,7 +42,8 @@ Frontend state should be split by domain:
 - `auth`: login state, session status, logout state
 - `projects`: recent projects, selected project, picker state
 - `providers`: provider list, selected provider, capabilities
-- `sessions`: active provider session, conversations, selected conversation
+- `sessions`: discovered sessions, active provider session, conversations,
+  selected conversation
 - `mirror`: snapshot HTML, hash, scroll state, loading state
 - `actions`: pending approvals and detected remote action buttons
 - `terminal`: tabs, active tab, connection state, resize state
@@ -63,12 +65,14 @@ Realtime event groups:
 - auth/session expiration
 - project registry changes
 - provider status changes
+- discovered session changes
 - Antigravity snapshot updates
 - pending action updates
 - adapter log updates
 - terminal output
 - terminal exit
 - terminal resize acknowledgement
+- external provider process discovery changes
 - file refresh notifications when available
 
 Snapshot updates should be applied only when the server reports a new hash.
@@ -98,6 +102,7 @@ Core components:
 - `ProviderSelector`
 - `Workspace`
 - `ConversationSidebar`
+- `SessionDiscoveryList`
 - `MirrorTimeline`
 - `ActionPanel`
 - `Composer`
@@ -115,6 +120,7 @@ Component boundaries:
 - `AppShell` owns layout and panel visibility.
 - `ProjectPicker` owns folder browsing and project selection UI.
 - `ProviderSelector` renders provider availability and capability state.
+- `SessionDiscoveryList` owns discovered session rows and attach actions.
 - `MirrorTimeline` renders sanitized snapshots and remote action click targets.
 - `Composer` owns prompt input, slash commands, and send/stop controls.
 - `ActionPanel` owns pending actions and provider status details.
@@ -165,12 +171,56 @@ Provider selector behavior:
 
 Antigravity session behavior:
 
-- detect running debug targets
+- detect all running debug targets
+- detect app-managed PTY or wrapper-launched sessions
+- best-effort detect unmanaged external terminal processes
+- show discovered sessions before launch
 - show attach option when target exists
 - show launch option when target does not exist
+- show active badge when generation, focus, pending action, or recent activity
+  can be detected
 - show connecting state after attach or launch
 - transition to connected mirror when snapshot starts
 - show recoverable disconnected state on CDP failure
+
+## Existing Session Sync Behavior
+
+The frontend must support attach-first workflows.
+
+Discovered session behavior:
+
+- run discovery from the home screen before project selection
+- request discovered sessions for the selected project and provider
+- list every controllable Antigravity CDP target, not only the first target
+- include app-managed terminal provider sessions when available
+- show external unmanaged terminal processes separately when detectable
+- mark likely active sessions
+- let the user attach to a controllable session without restarting it
+- auto-select or register the project when a discovered session exposes its
+  project path
+- make Launch New secondary when attachable sessions exist
+
+Session source labels:
+
+- `CDP`
+- `Managed PTY`
+- `Wrapper`
+- `External unmanaged`
+
+Attach behavior:
+
+- attaching to a CDP session loads its current snapshot
+- attaching to an app-managed PTY session reconnects terminal output and input
+- attaching to a wrapper-launched session resumes the registered provider bridge
+- unmanaged external terminal sessions show guidance instead of an Attach
+  control
+
+External terminal rule:
+
+- A provider process already running inside a normal desktop terminal cannot be
+  fully controlled through the browser unless it exposes CDP, was launched by
+  the app, or is inside a supported control surface such as tmux/screen.
+- The UI must say this plainly and offer the correct launch or wrapper command.
 
 ## Antigravity Mirror Behavior
 
@@ -282,6 +332,8 @@ Terminal dock behavior:
 Terminal session behavior:
 
 - new tab starts in selected project directory
+- provider commands started from app-managed terminal tabs are eligible for
+  future managed-session sync
 - frontend connects to authenticated terminal WebSocket
 - keyboard input streams to backend PTY
 - backend output streams to terminal renderer
@@ -316,6 +368,8 @@ Frontend error categories:
 - folder not readable
 - provider unavailable
 - Antigravity debug target not found
+- no controllable existing session found
+- unmanaged external terminal session detected
 - CDP attach failed
 - snapshot stale
 - remote action failed
@@ -357,6 +411,8 @@ MVP frontend tests should cover:
 - project picker and recent project selection
 - provider selector disabled future providers
 - attach/launch state transitions
+- discovered session list and attach flow
+- unmanaged external terminal guidance
 - mirror snapshot render and refresh
 - slash command palette filtering
 - terminal tab create/switch/close
