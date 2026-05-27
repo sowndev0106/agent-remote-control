@@ -1,14 +1,14 @@
+// src/server/core/realtime/ws.ts
 import { WebSocketServer, type WebSocket } from "ws";
 import type { AppInstance } from "../app.js";
 import type { RealtimeBus } from "./bus.js";
 import type { SessionStore } from "../session.js";
-import { SESSION_COOKIE } from "../app.js";
+import {
+  authenticateUpgrade,
+  cookieHeader,
+  reject401,
+} from "./upgrade-auth.js";
 
-/**
- * Mount a WS endpoint on the Fastify HTTP server that authenticates each
- * upgrade via the `arc_sid` cookie and forwards bus events to every connected
- * client. NFR-001 / H5: realtime endpoints also require auth.
- */
 export function mountRealtimeWS(opts: {
   app: AppInstance;
   bus: RealtimeBus;
@@ -22,20 +22,13 @@ export function mountRealtimeWS(opts: {
     const url = req.url ?? "";
     if (!url.startsWith(path)) return;
 
-    const cookieHeader = req.headers.cookie ?? "";
-    const cookies = parseCookies(cookieHeader);
-    const signed = cookies[SESSION_COOKIE];
-    const unsigned = signed
-      ? opts.app.unsignCookie(signed)
-      : { valid: false, value: null };
-    if (!unsigned.valid || !unsigned.value) {
-      socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
-      socket.destroy();
-      return;
-    }
-    if (!opts.sessions.get(unsigned.value)) {
-      socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
-      socket.destroy();
+    const auth = authenticateUpgrade({
+      cookieHeader: cookieHeader(req),
+      unsignCookie: (raw) => opts.app.unsignCookie(raw),
+      sessionsHas: (id) => !!opts.sessions.get(id),
+    });
+    if (!auth.ok) {
+      reject401(socket);
       return;
     }
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req));
@@ -54,7 +47,6 @@ export function mountRealtimeWS(opts: {
     }
   });
 
-  // Clean up when fastify closes.
   opts.app.addHook("onClose", async () => {
     unsubscribe();
     for (const c of clients) c.close();
@@ -62,14 +54,4 @@ export function mountRealtimeWS(opts: {
   });
 
   return wss;
-}
-
-function parseCookies(header: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const part of header.split(";")) {
-    const [k, ...rest] = part.trim().split("=");
-    if (!k) continue;
-    out[k] = decodeURIComponent(rest.join("="));
-  }
-  return out;
 }
