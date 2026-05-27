@@ -39,8 +39,17 @@ export interface AppConfig {
       debugPortRange: number[];
       launchTimeoutMs: number;
       snapshotPollMs: number;
+      tmuxTargets: TmuxScreenTarget[];
+      screenTargets: TmuxScreenTarget[];
     };
   };
+}
+
+export interface TmuxScreenTarget {
+  name: string;
+  project?: string;
+  sessionId?: string;
+  windowOrPane?: string;
 }
 
 export function defaultConfig(): AppConfig {
@@ -81,6 +90,8 @@ export function defaultConfig(): AppConfig {
         debugPortRange: [9000, 9001, 9002, 9003],
         launchTimeoutMs: 30_000,
         snapshotPollMs: 1000,
+        tmuxTargets: [],
+        screenTargets: [],
       },
     },
   };

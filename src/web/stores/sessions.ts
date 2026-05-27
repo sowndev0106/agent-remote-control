@@ -9,6 +9,8 @@ interface DiscoveredSession {
   hint: string;
   projectPath?: string;
   active?: boolean;
+  attachable?: boolean;
+  guidance?: { message: string; recommendedCommand: string };
 }
 
 interface State {

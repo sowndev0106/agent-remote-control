@@ -18,6 +18,10 @@ import { SessionStoreLite } from "../src/server/domains/sessions.js";
 import { RealtimeBus } from "../src/server/core/realtime/bus.js";
 import { AntigravityCdpAdapter } from "../src/server/adapters/antigravity/index.js";
 import { AntigravityPtyAdapter } from "../src/server/adapters/antigravity/pty.js";
+import { AntigravityTmuxAdapter } from "../src/server/adapters/antigravity/tmux.js";
+import { AntigravityScreenAdapter } from "../src/server/adapters/antigravity/screen.js";
+import { UnmanagedDetector } from "../src/server/adapters/antigravity/unmanaged.js";
+import { SessionDiscoveryAggregator } from "../src/server/domains/discovery.js";
 import { DebugPortPool } from "../src/server/ipc/wire.js";
 import { TerminalService } from "../src/server/domains/terminal.js";
 
@@ -75,6 +79,21 @@ async function makeAuthedApp() {
     maxTabs: config.terminal.maxTabs,
     scrollback: config.terminal.scrollback,
   });
+  const tmux = new AntigravityTmuxAdapter({
+    sessions: sessionsLite,
+    targets: () => config.providers.antigravity.tmuxTargets,
+  });
+  const screen = new AntigravityScreenAdapter({
+    sessions: sessionsLite,
+    targets: () => config.providers.antigravity.screenTargets,
+  });
+  const unmanaged = new UnmanagedDetector({
+    sessions: sessionsLite,
+    ownedPids: () => new Set(),
+    wrapperPids: () => new Set(),
+    procScan: async () => [],
+  });
+  const discovery = new SessionDiscoveryAggregator({ cdp: antigravity, tmux, screen, unmanaged });
 
   const app = await buildApp({
     config,
@@ -92,6 +111,7 @@ async function makeAuthedApp() {
     pty,
     portPool,
     terminal,
+    discovery,
     config,
   });
   await app.ready();

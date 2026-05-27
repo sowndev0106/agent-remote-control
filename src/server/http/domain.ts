@@ -15,6 +15,7 @@ import { registerFilesRoutes } from "./files-routes.js";
 import { registerTerminalRoutes } from "./terminal-routes.js";
 import type { DebugPortPool } from "../ipc/wire.js";
 import type { TerminalService } from "../domains/terminal.js";
+import type { SessionDiscoveryAggregator } from "../domains/discovery.js";
 
 export interface DomainDeps {
   projects: ProjectStore;
@@ -25,6 +26,7 @@ export interface DomainDeps {
   pty: AntigravityPtyAdapter;
   portPool: DebugPortPool;
   terminal: TerminalService;
+  discovery: SessionDiscoveryAggregator;
   config: AppConfig;
 }
 
@@ -39,6 +41,7 @@ export function registerDomainRoutes(app: AppInstance, deps: DomainDeps): void {
     antigravity: deps.antigravity,
     projects: deps.projects,
     sessions: deps.sessions,
+    discovery: deps.discovery,
   });
   registerPtyRoutes(app, {
     pty: deps.pty,
