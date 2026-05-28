@@ -15,8 +15,8 @@ Final backend coverage after Task 5.4 fills:
 pnpm exec vitest run --coverage tests/*.test.ts --coverage.include='src/server/**'
 ```
 
-Result: 50 test files passed, 210 tests passed. Server statement coverage is
-81.13% overall. The full mixed jsdom/node coverage command completes tests but
+Result: 50 test files passed, 211 tests passed. Server statement coverage is
+81.14% overall. The full mixed jsdom/node coverage command completes tests but
 still crashes in `@vitest/coverage-v8` remapping, so the server coverage audit
 uses the node-only backend run.
 
