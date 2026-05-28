@@ -3,7 +3,7 @@ import { AppError, errEnvelope, okEnvelope } from "../core/errors.js";
 import type { AntigravityPtyAdapter } from "../adapters/antigravity/pty.js";
 import type { AntigravityCdpAdapter } from "../adapters/antigravity/index.js";
 import type { ProjectStore } from "../domains/projects.js";
-import type { SessionStoreLite } from "../domains/sessions.js";
+import type { AgentSessionRegistry } from "../domains/agent-sessions.js";
 import type { DebugPortPool } from "../ipc/wire.js";
 import { rejectIfMissing, requireBodyString } from "./route-helpers.js";
 
@@ -11,7 +11,7 @@ interface Deps {
   pty: AntigravityPtyAdapter;
   cdp: AntigravityCdpAdapter;
   projects: ProjectStore;
-  sessions: SessionStoreLite;
+  sessions: AgentSessionRegistry;
   portPool: DebugPortPool;
 }
 

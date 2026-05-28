@@ -2,7 +2,7 @@ import type { AppInstance } from "../core/app.js";
 import type { AppConfig } from "../core/config.js";
 import { ProjectStore } from "../domains/projects.js";
 import { ProviderRegistry } from "../domains/providers.js";
-import { SessionStoreLite } from "../domains/sessions.js";
+import { AgentSessionRegistry } from "../domains/agent-sessions.js";
 import { AntigravityCdpAdapter } from "../adapters/antigravity/index.js";
 import { AntigravityPtyAdapter } from "../adapters/antigravity/pty.js";
 import { RealtimeBus } from "../core/realtime/bus.js";
@@ -21,7 +21,7 @@ import type { SessionDiscoveryAggregator } from "../domains/discovery.js";
 export interface DomainDeps {
   projects: ProjectStore;
   providers: ProviderRegistry;
-  sessions: SessionStoreLite;
+  sessions: AgentSessionRegistry;
   bus: RealtimeBus;
   antigravity: AntigravityCdpAdapter;
   pty: AntigravityPtyAdapter;

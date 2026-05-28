@@ -1,6 +1,6 @@
 import {
-  SessionStoreLite,
-} from "../../domains/sessions.js";
+  AgentSessionRegistry,
+} from "../../domains/agent-sessions.js";
 import type { Session } from "../../domains/types.js";
 import { allUnknownCapabilities } from "../../domains/types.js";
 import type { RealtimeBus } from "../../core/realtime/bus.js";
@@ -28,7 +28,7 @@ export class AntigravityWrapperAdapter {
 
   constructor(
     private opts: {
-      sessions: SessionStoreLite;
+      sessions: AgentSessionRegistry;
       bus: RealtimeBus;
     },
   ) {}
@@ -39,7 +39,7 @@ export class AntigravityWrapperAdapter {
       return this.byPid.get(args.pid)!.session;
     }
     const session: Session = {
-      sessionId: SessionStoreLite.newId(),
+      sessionId: AgentSessionRegistry.newId(),
       providerId: this.providerId,
       source: "wrapper",
       status: "running",

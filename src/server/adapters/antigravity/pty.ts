@@ -1,7 +1,7 @@
 import { spawnPty, type PtyHandle } from "../../pty/pty.js";
 import {
-  SessionStoreLite,
-} from "../../domains/sessions.js";
+  AgentSessionRegistry,
+} from "../../domains/agent-sessions.js";
 import type { Session } from "../../domains/types.js";
 import { allUnknownCapabilities } from "../../domains/types.js";
 import type { RealtimeBus } from "../../core/realtime/bus.js";
@@ -28,7 +28,7 @@ export class AntigravityPtyAdapter {
 
   constructor(
     private opts: {
-      sessions: SessionStoreLite;
+      sessions: AgentSessionRegistry;
       bus: RealtimeBus;
       command: string;
     },
@@ -41,7 +41,7 @@ export class AntigravityPtyAdapter {
       cwd: projectPath,
     });
     const session: Session = {
-      sessionId: SessionStoreLite.newId(),
+      sessionId: AgentSessionRegistry.newId(),
       providerId: this.providerId,
       source: "managed-pty",
       projectPath,

@@ -1,5 +1,5 @@
 import { readdir, readFile, readlink } from "node:fs/promises";
-import { SessionStoreLite } from "../../domains/sessions.js";
+import { AgentSessionRegistry } from "../../domains/agent-sessions.js";
 import {
   type Session,
   allUnsupportedCapabilities,
@@ -7,7 +7,7 @@ import {
 import type { DiscoveredSession } from "../IProviderAdapter.js";
 
 export interface UnmanagedDetectorDeps {
-  sessions: SessionStoreLite;
+  sessions: AgentSessionRegistry;
   /** PIDs the app owns (managed-PTY launches, CDP launches). */
   ownedPids: () => Set<number>;
   /** PIDs registered via the wrapper IPC. */
@@ -62,7 +62,7 @@ export class UnmanagedDetector {
         p.comm.includes(this.name) || p.cmdline.includes(this.name);
       if (!matches) continue;
 
-      const sessionId = SessionStoreLite.newId();
+      const sessionId = AgentSessionRegistry.newId();
       const session: Session = {
         sessionId,
         providerId: "antigravity",

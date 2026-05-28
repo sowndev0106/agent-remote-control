@@ -1,6 +1,6 @@
 // tests/route-helpers.test.ts
 import { describe, it, expect } from "vitest";
-import { SessionStoreLite } from "../src/server/domains/sessions.js";
+import { AgentSessionRegistry } from "../src/server/domains/agent-sessions.js";
 import {
   notFoundEnvelope,
   resolveSession,
@@ -10,8 +10,8 @@ import { AppError } from "../src/server/core/errors.js";
 
 describe("resolveSession", () => {
   it("returns the session when it exists", () => {
-    const reg = new SessionStoreLite();
-    const s = SessionStoreLite.makeSession({
+    const reg = new AgentSessionRegistry();
+    const s = AgentSessionRegistry.makeSession({
       providerId: "antigravity",
       source: "cdp",
       projectPath: "/x",
@@ -21,7 +21,7 @@ describe("resolveSession", () => {
   });
 
   it("returns undefined when unknown", () => {
-    expect(resolveSession(new SessionStoreLite(), "missing")).toBeUndefined();
+    expect(resolveSession(new AgentSessionRegistry(), "missing")).toBeUndefined();
   });
 });
 

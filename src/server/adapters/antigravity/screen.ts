@@ -7,7 +7,7 @@ import {
   type Session,
   allUnsupportedCapabilities,
 } from "../../domains/types.js";
-import { SessionStoreLite } from "../../domains/sessions.js";
+import { AgentSessionRegistry } from "../../domains/agent-sessions.js";
 import { AppError } from "../../core/errors.js";
 import type { TmuxScreenTarget } from "../../core/config.js";
 import { hasBinary, run } from "./mux-exec.js";
@@ -23,7 +23,7 @@ export class AntigravityScreenAdapter {
 
   constructor(
     private opts: {
-      sessions: SessionStoreLite;
+      sessions: AgentSessionRegistry;
       targets: () => TmuxScreenTarget[];
       exec?: typeof run;
       binaryCheck?: typeof hasBinary;
@@ -72,7 +72,7 @@ export class AntigravityScreenAdapter {
       // screen target name may be "pid.tty.host" or a user session name.
       const match = [...live].some((n) => n === t.name || n.endsWith("." + t.name));
       if (!match) continue;
-      const sessionId = SessionStoreLite.newId();
+      const sessionId = AgentSessionRegistry.newId();
       const session: Session = {
         sessionId,
         providerId: this.providerId,

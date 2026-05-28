@@ -7,7 +7,7 @@ import {
   type Session,
   type SessionStatus,
 } from "../../domains/types.js";
-import { SessionStoreLite } from "../../domains/sessions.js";
+import { AgentSessionRegistry } from "../../domains/agent-sessions.js";
 import { AppError } from "../../core/errors.js";
 import type {
   ActionDescriptor,
@@ -52,7 +52,7 @@ export class AntigravityCdpAdapter implements IProviderAdapter {
 
   constructor(
     private opts: {
-      sessions: SessionStoreLite;
+      sessions: AgentSessionRegistry;
       bus: RealtimeBus;
       command: string;
       debugPortRange: number[];
@@ -107,7 +107,7 @@ export class AntigravityCdpAdapter implements IProviderAdapter {
       if (!wb) continue;
       // Treat each CDP target as a discovered session keyed by target id.
       const existing = this.findRuntimeByTargetId(wb.id);
-      const sessionId = existing?.session.sessionId ?? SessionStoreLite.newId();
+      const sessionId = existing?.session.sessionId ?? AgentSessionRegistry.newId();
       const session: Session = {
         sessionId,
         providerId: this.providerId,
@@ -153,7 +153,7 @@ export class AntigravityCdpAdapter implements IProviderAdapter {
       });
     }
     const session: Session = {
-      sessionId: SessionStoreLite.newId(),
+      sessionId: AgentSessionRegistry.newId(),
       providerId: this.providerId,
       source: "cdp",
       projectPath,

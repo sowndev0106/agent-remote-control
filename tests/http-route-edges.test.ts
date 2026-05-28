@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { authedApp, type AuthedAppFixture } from "./_authed-app.js";
-import { SessionStoreLite } from "../src/server/domains/sessions.js";
+import { AgentSessionRegistry } from "../src/server/domains/agent-sessions.js";
 
 let dir: string;
 let root: string;
@@ -168,7 +168,7 @@ describe("adapter and pty route edge branches", () => {
     });
     expect(unknownLaunchProject.statusCode).toBe(404);
 
-    const claudeSession = SessionStoreLite.makeSession({
+    const claudeSession = AgentSessionRegistry.makeSession({
       providerId: "claude",
       source: "cdp",
     });
@@ -182,7 +182,7 @@ describe("adapter and pty route edge branches", () => {
     expect(scroll.statusCode).toBe(409);
     expect(scroll.json().error.code).toBe("capability_unsupported");
 
-    const managed = SessionStoreLite.makeSession({
+    const managed = AgentSessionRegistry.makeSession({
       providerId: "antigravity",
       source: "managed-pty",
     });
@@ -207,7 +207,7 @@ describe("adapter and pty route edge branches", () => {
   it("covers authenticated adapter success paths without launching Antigravity", async () => {
     const app = fixture.assembled.app;
     const projectId = await createProject();
-    const session = SessionStoreLite.makeSession({
+    const session = AgentSessionRegistry.makeSession({
       providerId: "antigravity",
       source: "cdp",
       projectPath: root,
@@ -328,7 +328,7 @@ describe("adapter and pty route edge branches", () => {
   it("covers pty launch and signal routes with mocked PTY adapter methods", async () => {
     const app = fixture.assembled.app;
     const projectId = await createProject();
-    const session = SessionStoreLite.makeSession({
+    const session = AgentSessionRegistry.makeSession({
       providerId: "antigravity",
       source: "managed-pty",
       projectPath: root,

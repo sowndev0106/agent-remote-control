@@ -1,7 +1,7 @@
 // src/server/http/route-helpers.ts
 import type { FastifyReply } from "fastify";
 import { AppError, errEnvelope } from "../core/errors.js";
-import type { SessionStoreLite } from "../domains/sessions.js";
+import type { AgentSessionRegistry } from "../domains/agent-sessions.js";
 import type { Session } from "../domains/types.js";
 
 /**
@@ -18,7 +18,7 @@ export function notFoundEnvelope(id: string, operation: string): AppError {
 }
 
 export function resolveSession(
-  store: SessionStoreLite,
+  store: AgentSessionRegistry,
   id: string,
 ): Session | undefined {
   return store.get(id);
@@ -29,7 +29,7 @@ export function resolveSession(
  * return true. Returns false when the id resolves.
  */
 export function rejectIfMissing(
-  store: SessionStoreLite,
+  store: AgentSessionRegistry,
   id: string,
   reply: FastifyReply,
   operation = "session lookup",

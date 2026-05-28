@@ -3,7 +3,7 @@ import {
   UnmanagedDetector,
   type RawProcess,
 } from "../src/server/adapters/antigravity/unmanaged.js";
-import { SessionStoreLite } from "../src/server/domains/sessions.js";
+import { AgentSessionRegistry } from "../src/server/domains/agent-sessions.js";
 
 function detector(
   procs: RawProcess[],
@@ -11,7 +11,7 @@ function detector(
   wrapper: number[] = [],
 ) {
   return new UnmanagedDetector({
-    sessions: new SessionStoreLite(),
+    sessions: new AgentSessionRegistry(),
     ownedPids: () => new Set(owned),
     wrapperPids: () => new Set(wrapper),
     procScan: async () => procs,

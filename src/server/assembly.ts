@@ -7,7 +7,7 @@ import { registerLoginRoutes } from "./http/login.js";
 import { registerDomainRoutes } from "./http/domain.js";
 import { ProjectStore } from "./domains/projects.js";
 import { ProviderRegistry } from "./domains/providers.js";
-import { SessionStoreLite } from "./domains/sessions.js";
+import { AgentSessionRegistry } from "./domains/agent-sessions.js";
 import { RealtimeBus } from "./core/realtime/bus.js";
 import { mountRealtimeWS } from "./core/realtime/ws.js";
 import { mountTerminalWS } from "./core/realtime/terminal-ws.js";
@@ -59,7 +59,7 @@ export interface AssembledDeps {
   cookieSessions: AuthSessionStore;
   projects: ProjectStore;
   providers: ProviderRegistry;
-  agentSessions: SessionStoreLite;
+  agentSessions: AgentSessionRegistry;
   bus: RealtimeBus;
   antigravity: AntigravityCdpAdapter;
   pty: AntigravityPtyAdapter;
@@ -109,7 +109,7 @@ export async function assembleServer(opts: AssembleOpts): Promise<AssembledServe
   await projects.load();
 
   const providers = new ProviderRegistry();
-  const agentSessions = new SessionStoreLite();
+  const agentSessions = new AgentSessionRegistry();
   const bus = new RealtimeBus();
   const portPool = new DebugPortPool(config.providers.antigravity.debugPortRange);
 
