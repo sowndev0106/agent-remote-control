@@ -1,17 +1,17 @@
-import type { FastifyReply } from "fastify";
 import type { AppInstance } from "../core/app.js";
 import { AppError, errEnvelope, okEnvelope } from "../core/errors.js";
 import type { AntigravityCdpAdapter } from "../adapters/antigravity/index.js";
 import type { ProjectStore } from "../domains/projects.js";
-import type { SessionStoreLite } from "../domains/sessions.js";
+import type { AgentSessionRegistry } from "../domains/agent-sessions.js";
 import type { IProviderAdapter } from "../adapters/IProviderAdapter.js";
 import type { ProviderId } from "../domains/types.js";
 import type { SessionDiscoveryAggregator } from "../domains/discovery.js";
+import { rejectIfMissing, requireBodyString } from "./route-helpers.js";
 
 interface Deps {
   antigravity: AntigravityCdpAdapter;
   projects: ProjectStore;
-  sessions: SessionStoreLite;
+  sessions: AgentSessionRegistry;
   discovery: SessionDiscoveryAggregator;
 }
 
@@ -23,19 +23,6 @@ function getAdapter(deps: Deps, providerId: ProviderId): IProviderAdapter {
     message: `Provider ${providerId} is not enabled in Phase 1.`,
     httpStatus: 409,
   });
-}
-
-function notFound(reply: FastifyReply, id: string): void {
-  reply.code(404).send(
-    errEnvelope(
-      new AppError({
-        code: "session_not_found",
-        operation: "session lookup",
-        message: `No session with id ${id}`,
-        httpStatus: 404,
-      }),
-    ),
-  );
 }
 
 export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
@@ -60,19 +47,7 @@ export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
   }>("/api/sessions/launch", async (req, reply) => {
     const providerId = req.body?.providerId ?? "antigravity";
     const adapter = getAdapter(deps, providerId);
-    const projectId = req.body?.projectId;
-    if (!projectId) {
-      reply.code(400).send(
-        errEnvelope(
-          new AppError({
-            code: "project_required",
-            operation: "session.launch",
-            message: "Request body must include `projectId`.",
-          }),
-        ),
-      );
-      return;
-    }
+    const projectId = requireBodyString(req.body, "projectId", "session.launch");
     const project = deps.projects.get(projectId);
     if (!project) {
       reply.code(404).send(
@@ -94,11 +69,9 @@ export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
   app.post<{ Params: { id: string } }>(
     "/api/sessions/:id/attach",
     async (req, reply) => {
-      const session = deps.sessions.get(req.params.id);
-      if (!session) {
-        notFound(reply, req.params.id);
-        return;
-      }
+      const session = rejectIfMissing(deps.sessions, req.params.id, reply,
+        `${req.method} ${req.url.split("?")[0]}`);
+      if (!session) return;
       const adapter = getAdapter(deps, session.providerId);
       const updated = await adapter.attach(session);
       reply.send(okEnvelope({ session: updated }));
@@ -109,24 +82,10 @@ export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
     Params: { id: string };
     Body: { text?: string; conversationId?: string };
   }>("/api/sessions/:id/prompt", async (req, reply) => {
-    const session = deps.sessions.get(req.params.id);
-    if (!session) {
-      notFound(reply, req.params.id);
-      return;
-    }
-    const text = req.body?.text;
-    if (typeof text !== "string" || text.length === 0) {
-      reply.code(400).send(
-        errEnvelope(
-          new AppError({
-            code: "prompt_required",
-            operation: "session.prompt",
-            message: "Request body must include `text`.",
-          }),
-        ),
-      );
-      return;
-    }
+    const session = rejectIfMissing(deps.sessions, req.params.id, reply,
+      `${req.method} ${req.url.split("?")[0]}`);
+    if (!session) return;
+    const text = requireBodyString(req.body, "text", "session.prompt");
     const adapter = getAdapter(deps, session.providerId);
     const ctx: { conversationId?: string } = {};
     if (typeof req.body?.conversationId === "string") {
@@ -139,11 +98,9 @@ export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
   app.post<{ Params: { id: string } }>(
     "/api/sessions/:id/stop",
     async (req, reply) => {
-      const session = deps.sessions.get(req.params.id);
-      if (!session) {
-        notFound(reply, req.params.id);
-        return;
-      }
+      const session = rejectIfMissing(deps.sessions, req.params.id, reply,
+        `${req.method} ${req.url.split("?")[0]}`);
+      if (!session) return;
       const adapter = getAdapter(deps, session.providerId);
       await adapter.stop(session);
       reply.send(okEnvelope({ ok: true }));
@@ -153,11 +110,9 @@ export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
   app.post<{ Params: { id: string } }>(
     "/api/sessions/:id/new-conversation",
     async (req, reply) => {
-      const session = deps.sessions.get(req.params.id);
-      if (!session) {
-        notFound(reply, req.params.id);
-        return;
-      }
+      const session = rejectIfMissing(deps.sessions, req.params.id, reply,
+        `${req.method} ${req.url.split("?")[0]}`);
+      if (!session) return;
       const adapter = getAdapter(deps, session.providerId);
       const actions = await adapter.getActions(session);
       const newChat = actions.find((a) =>
@@ -183,11 +138,9 @@ export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
   app.get<{ Params: { id: string } }>(
     "/api/sessions/:id/snapshot",
     async (req, reply) => {
-      const session = deps.sessions.get(req.params.id);
-      if (!session) {
-        notFound(reply, req.params.id);
-        return;
-      }
+      const session = rejectIfMissing(deps.sessions, req.params.id, reply,
+        `${req.method} ${req.url.split("?")[0]}`);
+      if (!session) return;
       const adapter = getAdapter(deps, session.providerId);
       const snap = await adapter.getSnapshot(session);
       reply.send(okEnvelope({ snapshot: snap }));
@@ -197,11 +150,9 @@ export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
   app.get<{ Params: { id: string } }>(
     "/api/sessions/:id/actions",
     async (req, reply) => {
-      const session = deps.sessions.get(req.params.id);
-      if (!session) {
-        notFound(reply, req.params.id);
-        return;
-      }
+      const session = rejectIfMissing(deps.sessions, req.params.id, reply,
+        `${req.method} ${req.url.split("?")[0]}`);
+      if (!session) return;
       const adapter = getAdapter(deps, session.providerId);
       const actions = await adapter.getActions(session);
       reply.send(okEnvelope({ actions }));
@@ -211,11 +162,9 @@ export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
   app.post<{ Params: { id: string; actionId: string } }>(
     "/api/sessions/:id/actions/:actionId",
     async (req, reply) => {
-      const session = deps.sessions.get(req.params.id);
-      if (!session) {
-        notFound(reply, req.params.id);
-        return;
-      }
+      const session = rejectIfMissing(deps.sessions, req.params.id, reply,
+        `${req.method} ${req.url.split("?")[0]}`);
+      if (!session) return;
       const adapter = getAdapter(deps, session.providerId);
       await adapter.performAction(session, req.params.actionId);
       reply.send(okEnvelope({ ok: true }));
@@ -225,11 +174,9 @@ export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
   app.get<{ Params: { id: string } }>(
     "/api/sessions/:id/conversations",
     async (req, reply) => {
-      const session = deps.sessions.get(req.params.id);
-      if (!session) {
-        notFound(reply, req.params.id);
-        return;
-      }
+      const session = rejectIfMissing(deps.sessions, req.params.id, reply,
+        `${req.method} ${req.url.split("?")[0]}`);
+      if (!session) return;
       const adapter = getAdapter(deps, session.providerId);
       const conversations = await adapter.listConversations(session);
       reply.send(okEnvelope({ conversations }));
@@ -239,11 +186,9 @@ export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
   app.post<{ Params: { id: string; cid: string } }>(
     "/api/sessions/:id/conversations/:cid/select",
     async (req, reply) => {
-      const session = deps.sessions.get(req.params.id);
-      if (!session) {
-        notFound(reply, req.params.id);
-        return;
-      }
+      const session = rejectIfMissing(deps.sessions, req.params.id, reply,
+        `${req.method} ${req.url.split("?")[0]}`);
+      if (!session) return;
       const adapter = getAdapter(deps, session.providerId);
       await adapter.selectConversation(session, req.params.cid);
       reply.send(okEnvelope({ ok: true }));
@@ -254,11 +199,9 @@ export function registerAdapterRoutes(app: AppInstance, deps: Deps): void {
     Params: { id: string };
     Body: { fraction?: number };
   }>("/api/sessions/:id/scroll", async (req, reply) => {
-    const session = deps.sessions.get(req.params.id);
-    if (!session) {
-      notFound(reply, req.params.id);
-      return;
-    }
+    const session = rejectIfMissing(deps.sessions, req.params.id, reply,
+      `${req.method} ${req.url.split("?")[0]}`);
+    if (!session) return;
     if (session.providerId !== "antigravity") {
       reply.code(409).send(
         errEnvelope(

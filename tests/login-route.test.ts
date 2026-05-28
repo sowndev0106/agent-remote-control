@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { defaultConfig } from "../src/server/core/config.js";
-import { SessionStore } from "../src/server/core/session.js";
+import { AuthSessionStore } from "../src/server/core/auth-session.js";
 import { hashPassword } from "../src/server/core/auth.js";
 import { buildApp, SESSION_COOKIE } from "../src/server/core/app.js";
 import {
@@ -26,7 +26,7 @@ async function makeApp(password = "correct-horse-battery") {
   const { hash, algorithm } = await hashPassword(password);
   config.server.passwordHash = hash;
   config.security.passwordHashAlgorithm = algorithm;
-  const sessions = new SessionStore({
+  const sessions = new AuthSessionStore({
     path: join(dir, "sessions.json"),
     idleTimeoutMs: config.server.sessionIdleTimeoutMs,
   });

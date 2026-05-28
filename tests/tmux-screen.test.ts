@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { AntigravityTmuxAdapter } from "../src/server/adapters/antigravity/tmux.js";
 import { AntigravityScreenAdapter } from "../src/server/adapters/antigravity/screen.js";
-import { SessionStoreLite } from "../src/server/domains/sessions.js";
+import { AgentSessionRegistry } from "../src/server/domains/agent-sessions.js";
 import type { ExecResult } from "../src/server/adapters/antigravity/mux-exec.js";
 
 interface Call {
@@ -35,7 +35,7 @@ describe("AntigravityTmuxAdapter", () => {
     const { exec } = recorder({
       "tmux list-sessions": { code: 0, stdout: "work\nother\n", stderr: "" },
     });
-    const sessions = new SessionStoreLite();
+    const sessions = new AgentSessionRegistry();
     const adapter = new AntigravityTmuxAdapter({
       sessions,
       targets: () => [
@@ -54,7 +54,7 @@ describe("AntigravityTmuxAdapter", () => {
   it("sendPrompt uses -l literal mode (injection-safe, S07-T09)", async () => {
     const { calls, exec } = recorder({});
     const adapter = new AntigravityTmuxAdapter({
-      sessions: new SessionStoreLite(),
+      sessions: new AgentSessionRegistry(),
       targets: () => [{ name: "work" }],
       exec,
       binaryCheck: async () => true,
@@ -73,7 +73,7 @@ describe("AntigravityTmuxAdapter", () => {
       "tmux capture-pane": { code: 0, stdout: "pane contents", stderr: "" },
     });
     const adapter = new AntigravityTmuxAdapter({
-      sessions: new SessionStoreLite(),
+      sessions: new AgentSessionRegistry(),
       targets: () => [{ name: "work" }],
       exec,
       binaryCheck: async () => true,
@@ -85,7 +85,7 @@ describe("AntigravityTmuxAdapter", () => {
 
   it("missing configured target throws tmux_target_missing", async () => {
     const adapter = new AntigravityTmuxAdapter({
-      sessions: new SessionStoreLite(),
+      sessions: new AgentSessionRegistry(),
       targets: () => [],
       exec: async () => ({ code: 0, stdout: "", stderr: "" }),
     });
@@ -97,7 +97,7 @@ describe("AntigravityTmuxAdapter", () => {
   it("stop sends Ctrl-C (C-c)", async () => {
     const { calls, exec } = recorder({});
     const adapter = new AntigravityTmuxAdapter({
-      sessions: new SessionStoreLite(),
+      sessions: new AgentSessionRegistry(),
       targets: () => [{ name: "work" }],
       exec,
       binaryCheck: async () => true,
@@ -111,7 +111,7 @@ describe("AntigravityScreenAdapter", () => {
   it("sendPrompt uses stuff with text as single argv element", async () => {
     const { calls, exec } = recorder({});
     const adapter = new AntigravityScreenAdapter({
-      sessions: new SessionStoreLite(),
+      sessions: new AgentSessionRegistry(),
       targets: () => [{ name: "agy" }],
       exec,
       binaryCheck: async () => true,

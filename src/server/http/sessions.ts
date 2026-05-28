@@ -1,9 +1,9 @@
 import type { AppInstance } from "../core/app.js";
 import { okEnvelope } from "../core/errors.js";
-import type { SessionStoreLite } from "../domains/sessions.js";
+import type { AgentSessionRegistry } from "../domains/agent-sessions.js";
 
 interface Deps {
-  sessions: SessionStoreLite;
+  sessions: AgentSessionRegistry;
 }
 
 /**

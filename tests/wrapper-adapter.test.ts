@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { AntigravityWrapperAdapter } from "../src/server/adapters/antigravity/wrapper.js";
-import { SessionStoreLite } from "../src/server/domains/sessions.js";
+import { AgentSessionRegistry } from "../src/server/domains/agent-sessions.js";
 import { RealtimeBus } from "../src/server/core/realtime/bus.js";
 
 function make() {
-  const sessions = new SessionStoreLite();
+  const sessions = new AgentSessionRegistry();
   const bus = new RealtimeBus();
   const adapter = new AntigravityWrapperAdapter({ sessions, bus });
   return { sessions, bus, adapter };

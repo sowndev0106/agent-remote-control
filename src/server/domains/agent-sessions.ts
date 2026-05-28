@@ -13,7 +13,7 @@ import { allUnknownCapabilities } from "./types.js";
  * provider sessions are created by the CDP adapter in sprint 03+ and by PTY in
  * sprint 05+. The store is the single owner of `sessionId`s (H9: server-issued).
  */
-export class SessionStoreLite {
+export class AgentSessionRegistry {
   private byId = new Map<string, Session>();
 
   list(): Session[] {
@@ -42,7 +42,7 @@ export class SessionStoreLite {
     owned?: boolean;
   }): Session {
     const s: Session = {
-      sessionId: SessionStoreLite.newId(),
+      sessionId: AgentSessionRegistry.newId(),
       providerId: args.providerId,
       source: args.source,
       status: args.status ?? "unknown",

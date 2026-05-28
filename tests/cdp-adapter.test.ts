@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { AntigravityCdpAdapter } from "../src/server/adapters/antigravity/index.js";
-import { SessionStoreLite } from "../src/server/domains/sessions.js";
+import { AgentSessionRegistry } from "../src/server/domains/agent-sessions.js";
 import { RealtimeBus } from "../src/server/core/realtime/bus.js";
 import type { CDPClient } from "../src/server/adapters/antigravity/cdp.js";
 import type { Envelope } from "../src/server/core/realtime/events.js";
@@ -23,7 +23,7 @@ function fakeCdp(captureScript: () => unknown): CDPClient {
 
 describe("AntigravityCdpAdapter (mocked CDP)", () => {
   it("attach + getSnapshot + getActions returns server-issued action IDs", async () => {
-    const sessions = new SessionStoreLite();
+    const sessions = new AgentSessionRegistry();
     const bus = new RealtimeBus();
     const adapter = new AntigravityCdpAdapter({
       sessions,
@@ -41,7 +41,7 @@ describe("AntigravityCdpAdapter (mocked CDP)", () => {
     });
 
     // simulate a manually-set session in the registry (no real discover needed)
-    const seed = SessionStoreLite.makeSession({
+    const seed = AgentSessionRegistry.makeSession({
       providerId: "antigravity",
       source: "cdp",
       projectPath: "/x",
@@ -69,7 +69,7 @@ describe("AntigravityCdpAdapter (mocked CDP)", () => {
   });
 
   it("performAction throws action_not_found for unknown id", async () => {
-    const sessions = new SessionStoreLite();
+    const sessions = new AgentSessionRegistry();
     const bus = new RealtimeBus();
     const adapter = new AntigravityCdpAdapter({
       sessions,
@@ -85,7 +85,7 @@ describe("AntigravityCdpAdapter (mocked CDP)", () => {
         title: "Antigravity",
       })),
     });
-    const seed = SessionStoreLite.makeSession({
+    const seed = AgentSessionRegistry.makeSession({
       providerId: "antigravity",
       source: "cdp",
       projectPath: "/x",
@@ -105,7 +105,7 @@ describe("AntigravityCdpAdapter (mocked CDP)", () => {
   it("snapshot poll broadcasts on hash change only", async () => {
     vi.useFakeTimers();
     try {
-      const sessions = new SessionStoreLite();
+      const sessions = new AgentSessionRegistry();
       const bus = new RealtimeBus();
       const received: Envelope<unknown>[] = [];
       bus.subscribe((e) => received.push(e));
@@ -126,7 +126,7 @@ describe("AntigravityCdpAdapter (mocked CDP)", () => {
         })),
       });
 
-      const seed = SessionStoreLite.makeSession({
+      const seed = AgentSessionRegistry.makeSession({
         providerId: "antigravity",
         source: "cdp",
         projectPath: "/x",

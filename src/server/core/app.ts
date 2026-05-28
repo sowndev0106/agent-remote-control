@@ -6,7 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createLogger } from "./logger.js";
 import type { AppConfig } from "./config.js";
-import { SessionStore } from "./session.js";
+import { AuthSessionStore } from "./auth-session.js";
 import { AppError, errEnvelope } from "./errors.js";
 import { CSRF_COOKIE, CSRF_HEADER, verifyCsrfToken } from "./csrf.js";
 
@@ -17,7 +17,7 @@ export interface BuildAppDeps {
   config: AppConfig;
   configPath: string;
   secret: Buffer;
-  sessions: SessionStore;
+  sessions: AuthSessionStore;
 }
 
 export const SESSION_COOKIE = "arc_sid";
