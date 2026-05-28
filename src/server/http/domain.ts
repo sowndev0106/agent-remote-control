@@ -5,6 +5,7 @@ import { ProviderRegistry } from "../domains/providers.js";
 import { AgentSessionRegistry } from "../domains/agent-sessions.js";
 import { AntigravityCdpAdapter } from "../adapters/antigravity/index.js";
 import { AntigravityPtyAdapter } from "../adapters/antigravity/pty.js";
+import { AgyPtyAdapter } from "../adapters/agy/pty.js";
 import { RealtimeBus } from "../core/realtime/bus.js";
 import { registerProjectRoutes } from "./projects.js";
 import { registerProviderRoutes } from "./providers.js";
@@ -25,6 +26,7 @@ export interface DomainDeps {
   bus: RealtimeBus;
   antigravity: AntigravityCdpAdapter;
   pty: AntigravityPtyAdapter;
+  agy: AgyPtyAdapter;
   portPool: DebugPortPool;
   terminal: TerminalService;
   discovery: SessionDiscoveryAggregator;
@@ -41,6 +43,7 @@ export function registerDomainRoutes(app: AppInstance, deps: DomainDeps): void {
   registerSessionRoutes(app, { sessions: deps.sessions });
   registerAdapterRoutes(app, {
     antigravity: deps.antigravity,
+    agy: deps.agy,
     projects: deps.projects,
     sessions: deps.sessions,
     discovery: deps.discovery,

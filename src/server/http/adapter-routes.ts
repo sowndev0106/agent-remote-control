@@ -1,6 +1,7 @@
 import type { AppInstance } from "../core/app.js";
 import { AppError, errEnvelope, okEnvelope } from "../core/errors.js";
 import type { AntigravityCdpAdapter } from "../adapters/antigravity/index.js";
+import type { AgyPtyAdapter } from "../adapters/agy/pty.js";
 import type { ProjectStore } from "../domains/projects.js";
 import type { AgentSessionRegistry } from "../domains/agent-sessions.js";
 import type { IProviderAdapter } from "../adapters/IProviderAdapter.js";
@@ -10,6 +11,7 @@ import { rejectIfMissing, requireBodyString } from "./route-helpers.js";
 
 interface Deps {
   antigravity: AntigravityCdpAdapter;
+  agy: AgyPtyAdapter;
   projects: ProjectStore;
   sessions: AgentSessionRegistry;
   discovery: SessionDiscoveryAggregator;
@@ -17,6 +19,7 @@ interface Deps {
 
 function getAdapter(deps: Deps, providerId: ProviderId): IProviderAdapter {
   if (providerId === "antigravity") return deps.antigravity;
+  if (providerId === "agy") return deps.agy;
   throw new AppError({
     code: "provider_disabled",
     operation: "select adapter",

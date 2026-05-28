@@ -17,6 +17,8 @@ import { AntigravityWrapperAdapter } from "./adapters/antigravity/wrapper.js";
 import { AntigravityTmuxAdapter } from "./adapters/antigravity/tmux.js";
 import { AntigravityScreenAdapter } from "./adapters/antigravity/screen.js";
 import { UnmanagedDetector } from "./adapters/antigravity/unmanaged.js";
+import { AgyPtyAdapter } from "./adapters/agy/pty.js";
+import type { PtyHandle, SpawnPtyOpts } from "./pty/pty.js";
 import { SessionDiscoveryAggregator } from "./domains/discovery.js";
 import { DebugPortPool, startIpcServer } from "./ipc/wire.js";
 import type { IpcServer } from "./ipc/server.js";
@@ -46,6 +48,8 @@ export interface AssembleOverrides {
   skipWs?: boolean;
   /** Skip the startup permission audit (tests using mkdtemp dirs). */
   skipPermissionAudit?: boolean;
+  /** Inject a fake PTY spawn for the agy adapter (tests). */
+  agySpawn?: (opts: SpawnPtyOpts) => PtyHandle;
 }
 
 export interface AssembleOpts {
@@ -67,6 +71,7 @@ export interface AssembledDeps {
   tmux: AntigravityTmuxAdapter;
   screen: AntigravityScreenAdapter;
   unmanaged: UnmanagedDetector;
+  agy: AgyPtyAdapter;
   discovery: SessionDiscoveryAggregator;
   terminal: TerminalService;
   portPool: DebugPortPool;
@@ -141,6 +146,14 @@ export async function assembleServer(opts: AssembleOpts): Promise<AssembledServe
     wrapperPids: () => new Set(),
     processName: config.providers.antigravity.command,
   });
+  const agy = new AgyPtyAdapter({
+    sessions: agentSessions,
+    bus,
+    command: config.providers.agy.command,
+    scrollback: config.providers.agy.scrollback,
+    conversationsDir: config.providers.agy.conversationsDir,
+    ...(overrides.agySpawn ? { spawn: overrides.agySpawn } : {}),
+  });
   const discovery = new SessionDiscoveryAggregator([
     antigravity,
     tmux,
@@ -168,6 +181,7 @@ export async function assembleServer(opts: AssembleOpts): Promise<AssembledServe
     bus,
     antigravity,
     pty,
+    agy,
     portPool,
     terminal,
     discovery,
@@ -211,6 +225,7 @@ export async function assembleServer(opts: AssembleOpts): Promise<AssembledServe
     tmux,
     screen,
     unmanaged,
+    agy,
     discovery,
     terminal,
     portPool,
@@ -220,6 +235,7 @@ export async function assembleServer(opts: AssembleOpts): Promise<AssembledServe
   const shutdown = async (): Promise<void> => {
     terminal.shutdown();
     await pty.shutdown();
+    await agy.shutdown();
     await antigravity.shutdown();
     if (ipc) await ipc.stop();
     await app.close();
