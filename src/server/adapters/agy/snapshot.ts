@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { Terminal } from "@xterm/headless";
-import { escapeForAppDom } from "../antigravity/sanitize.js";
+import { escapeForAppDom } from "../text-escape.js";
 import type { SnapshotPayload } from "../IProviderAdapter.js";
 
 export interface AgySnapshotBufferOpts {

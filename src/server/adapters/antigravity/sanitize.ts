@@ -42,15 +42,3 @@ export function sanitizeMirrorHtml(rawHtml: string): string {
     KEEP_CONTENT: true,
   }) as string;
 }
-
-/**
- * Escape arbitrary scraped text before inserting into app-owned DOM (NFR-004).
- */
-export function escapeForAppDom(input: string): string {
-  return input
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}

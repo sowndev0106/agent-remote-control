@@ -1,8 +1,6 @@
 import { describe, it, expect } from "vitest";
-import {
-  escapeForAppDom,
-  sanitizeMirrorHtml,
-} from "../src/server/adapters/antigravity/sanitize.js";
+import { sanitizeMirrorHtml } from "../src/server/adapters/antigravity/sanitize.js";
+import { escapeForAppDom } from "../src/server/adapters/text-escape.js";
 
 describe("sanitizeMirrorHtml", () => {
   it("strips <script>", () => {
