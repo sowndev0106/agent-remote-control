@@ -10,6 +10,7 @@ const MARKERS: { name: RecommendationMarker["marker"]; isDir: boolean }[] = [
   { name: ".opencode/", isDir: true },
   { name: ".claude/", isDir: true },
   { name: ".codex/", isDir: true },
+  { name: ".antigravitycli/", isDir: true },
 ];
 
 export async function detectRecommendations(

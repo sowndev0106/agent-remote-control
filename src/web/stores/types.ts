@@ -2,7 +2,7 @@
 // generate from a shared schema.
 
 export type Capability = "supported" | "unsupported" | "unknown";
-export type ProviderId = "antigravity" | "claude" | "codex" | "opencode";
+export type ProviderId = "antigravity" | "agy" | "claude" | "codex" | "opencode";
 
 export interface CapabilityMap {
   launch: Capability;
@@ -13,9 +13,17 @@ export interface CapabilityMap {
   listConversations: Capability;
   selectConversation: Capability;
   getSnapshot: Capability;
+  getStatus: Capability;
   getActions: Capability;
   performAction: Capability;
   dispose: Capability;
+}
+
+export interface SlashCommandDescriptor {
+  id: string;
+  label: string;
+  command: string;
+  enabled: boolean;
 }
 
 export interface ProviderInfo {
@@ -26,6 +34,7 @@ export interface ProviderInfo {
   status: "future" | "unavailable" | "ready";
   capabilities: CapabilityMap;
   note?: string;
+  slashCommands?: SlashCommandDescriptor[];
 }
 
 export interface RecommendationMarker {
@@ -66,4 +75,11 @@ export interface SnapshotPayload {
   capturedAt: number;
   html?: string;
   text?: string;
+}
+
+export interface ConversationDescriptor {
+  conversationId: string;
+  title: string;
+  startedAt?: number;
+  projectPath?: string;
 }

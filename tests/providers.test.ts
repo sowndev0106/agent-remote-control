@@ -6,7 +6,13 @@ describe("ProviderRegistry", () => {
     const reg = new ProviderRegistry();
     const all = reg.getAll();
     const ids = all.map((p) => p.id).sort();
-    expect(ids).toEqual(["antigravity", "claude", "codex", "opencode"]);
+    expect(ids).toEqual(["agy", "antigravity", "claude", "codex", "opencode"]);
+
+    const agy = reg.get("agy")!;
+    expect(agy.displayName).toBe("agy");
+    expect(agy.enabled).toBe(true);
+    expect(agy.capabilities.launch).toBe("unknown");
+    expect(agy.note).toMatch(/Antigravity CLI/i);
 
     const ag = reg.get("antigravity")!;
     expect(ag.enabled).toBe(true);

@@ -42,4 +42,17 @@ describe("config", () => {
     const loaded = await loadConfig(path);
     expect(loaded.server.port).toBe(5555);
   });
+
+  it("includes agy provider defaults", () => {
+    const cfg = defaultConfig();
+    expect(cfg.providers.agy).toMatchObject({
+      enabled: true,
+      command: "agy",
+      wrapperCommands: ["agy"],
+      controlSurfaces: ["agy-pty", "agy-wrapper"],
+      snapshotPollMs: 500,
+      scrollback: 4000,
+      conversationsDir: "~/.gemini/antigravity-cli/conversations",
+    });
+  });
 });

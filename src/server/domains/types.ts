@@ -1,6 +1,6 @@
 export type Capability = "supported" | "unsupported" | "unknown";
 
-export type ProviderId = "antigravity" | "claude" | "codex" | "opencode";
+export type ProviderId = "antigravity" | "agy" | "claude" | "codex" | "opencode";
 
 export const CAPABILITY_KEYS = [
   "launch",
@@ -11,6 +11,7 @@ export const CAPABILITY_KEYS = [
   "listConversations",
   "selectConversation",
   "getSnapshot",
+  "getStatus",
   "getActions",
   "performAction",
   "dispose",
@@ -32,6 +33,13 @@ export function allUnsupportedCapabilities(): CapabilityMap {
   ) as CapabilityMap;
 }
 
+export interface SlashCommandDescriptor {
+  id: string;
+  label: string;
+  command: string;
+  enabled: boolean;
+}
+
 export interface ProviderInfo {
   id: ProviderId;
   displayName: string;
@@ -40,6 +48,7 @@ export interface ProviderInfo {
   status: "future" | "unavailable" | "ready";
   capabilities: CapabilityMap;
   note?: string;
+  slashCommands?: SlashCommandDescriptor[];
 }
 
 export interface RecommendationMarker {
@@ -50,7 +59,8 @@ export interface RecommendationMarker {
     | ".agents/"
     | ".opencode/"
     | ".claude/"
-    | ".codex/";
+    | ".codex/"
+    | ".antigravitycli/";
 }
 
 export interface ProjectInfo {
@@ -87,7 +97,10 @@ export type SourceType =
   | "wrapper"
   | "tmux"
   | "screen"
-  | "unmanaged";
+  | "unmanaged"
+  | "agy-pty"
+  | "agy-wrapper"
+  | "agy-unmanaged";
 
 export interface Session {
   sessionId: string;

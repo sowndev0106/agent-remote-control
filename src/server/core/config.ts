@@ -42,6 +42,15 @@ export interface AppConfig {
       tmuxTargets: TmuxScreenTarget[];
       screenTargets: TmuxScreenTarget[];
     };
+    agy: {
+      enabled: boolean;
+      command: string;
+      wrapperCommands: string[];
+      controlSurfaces: string[];
+      snapshotPollMs: number;
+      scrollback: number;
+      conversationsDir: string;
+    };
   };
 }
 
@@ -93,6 +102,15 @@ export function defaultConfig(): AppConfig {
         tmuxTargets: [],
         screenTargets: [],
       },
+      agy: {
+        enabled: true,
+        command: "agy",
+        wrapperCommands: ["agy"],
+        controlSurfaces: ["agy-pty", "agy-wrapper"],
+        snapshotPollMs: 500,
+        scrollback: 4000,
+        conversationsDir: "~/.gemini/antigravity-cli/conversations",
+      },
     },
   };
 }
@@ -128,6 +146,10 @@ function mergeWithDefaults(loaded: Partial<AppConfig>): AppConfig {
       antigravity: {
         ...d.providers.antigravity,
         ...((loaded.providers ?? {}).antigravity ?? {}),
+      },
+      agy: {
+        ...d.providers.agy,
+        ...((loaded.providers ?? {}).agy ?? {}),
       },
     },
   };

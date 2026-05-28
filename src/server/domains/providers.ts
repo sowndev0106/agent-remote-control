@@ -20,6 +20,17 @@ export class ProviderRegistry {
       status: "unavailable",
       capabilities: allUnknownCapabilities(),
       note: "Antigravity adapter not yet probed.",
+      slashCommands: [],
+    });
+    this.set({
+      id: "agy",
+      displayName: "agy",
+      enabled: true,
+      available: false,
+      status: "unavailable",
+      capabilities: allUnknownCapabilities(),
+      note: "Antigravity CLI adapter not yet probed.",
+      slashCommands: [],
     });
     // Future providers — visible but unavailable (REQ-024).
     for (const id of ["claude", "codex", "opencode"] as const) {
@@ -45,6 +56,8 @@ export class ProviderRegistry {
         return "opencode";
       case "antigravity":
         return "Antigravity";
+      case "agy":
+        return "agy";
     }
   }
 
