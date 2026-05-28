@@ -25,7 +25,7 @@ export class SessionDiscoveryAggregator {
       this.deps.cdp.listDiscoveredSessions(projectPath),
       this.deps.tmux.listDiscoveredSessions(),
       this.deps.screen.listDiscoveredSessions(),
-      this.deps.unmanaged.scan(),
+      this.deps.unmanaged.listDiscoveredSessions(),
     ]);
     const out: DiscoveredSession[] = [];
     for (const r of results) {

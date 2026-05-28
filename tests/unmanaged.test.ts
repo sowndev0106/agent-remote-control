@@ -23,7 +23,7 @@ describe("UnmanagedDetector", () => {
     const det = detector([
       { pid: 1000, comm: "antigravity", cmdline: "antigravity /home/u/proj", cwd: "/home/u/proj" },
     ]);
-    const found = await det.scan();
+    const found = await det.listDiscoveredSessions();
     expect(found.length).toBe(1);
     expect(found[0]!.source).toBe("unmanaged");
     expect(found[0]!.attachable).toBe(false);
@@ -35,7 +35,7 @@ describe("UnmanagedDetector", () => {
       [{ pid: 2000, comm: "antigravity", cmdline: "antigravity" }],
       [2000],
     );
-    expect(await det.scan()).toEqual([]);
+    expect(await det.listDiscoveredSessions()).toEqual([]);
   });
 
   it("excludes wrapper-registered PIDs", async () => {
@@ -44,17 +44,17 @@ describe("UnmanagedDetector", () => {
       [],
       [3000],
     );
-    expect(await det.scan()).toEqual([]);
+    expect(await det.listDiscoveredSessions()).toEqual([]);
   });
 
   it("ignores non-antigravity processes", async () => {
     const det = detector([{ pid: 4000, comm: "node", cmdline: "node server.js" }]);
-    expect(await det.scan()).toEqual([]);
+    expect(await det.listDiscoveredSessions()).toEqual([]);
   });
 
   it("uses generic recommended command when cwd unknown", async () => {
     const det = detector([{ pid: 5000, comm: "antigravity", cmdline: "antigravity" }]);
-    const found = await det.scan();
+    const found = await det.listDiscoveredSessions();
     expect(found[0]!.guidance.recommendedCommand).toContain("<project>");
     expect(found[0]!.projectPath).toBeUndefined();
   });
