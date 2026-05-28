@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
-import { Terminal } from "@xterm/headless";
+// @xterm/headless is CommonJS: Node's ESM loader cannot statically resolve a
+// named `{ Terminal }` import, so default-import the module and destructure.
+import xtermHeadless from "@xterm/headless";
 import { escapeForAppDom } from "../text-escape.js";
 import type { SnapshotPayload } from "../IProviderAdapter.js";
+
+const { Terminal } = xtermHeadless;
 
 export interface AgySnapshotBufferOpts {
   cols?: number;
@@ -10,7 +14,7 @@ export interface AgySnapshotBufferOpts {
 }
 
 export class AgySnapshotBuffer {
-  private readonly term: Terminal;
+  private readonly term: InstanceType<typeof Terminal>;
 
   constructor(opts: AgySnapshotBufferOpts) {
     this.term = new Terminal({
