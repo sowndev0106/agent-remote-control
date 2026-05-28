@@ -3,6 +3,7 @@ import type {
   ProviderId,
   Session,
 } from "../domains/types.js";
+import type { Discoverable } from "./capabilities.js";
 
 export interface DetectResult {
   available: boolean;
@@ -48,11 +49,9 @@ export interface PromptContext {
  * Provider adapter contract — REQ-026.
  * Every method returns normalized data shapes (REQ-026A).
  */
-export interface IProviderAdapter {
-  readonly providerId: ProviderId;
-
+export interface IProviderAdapter extends Discoverable {
+  // providerId and listDiscoveredSessions are inherited from Discoverable.
   detect(): Promise<DetectResult>;
-  listDiscoveredSessions(projectPath: string): Promise<DiscoveredSession[]>;
 
   start(projectPath: string, options?: Record<string, unknown>): Promise<Session>;
   attach(session: Session): Promise<Session>;
