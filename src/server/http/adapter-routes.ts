@@ -1,7 +1,7 @@
 import type { AppInstance } from "../core/app.js";
 import { AppError, errEnvelope, okEnvelope } from "../core/errors.js";
 import type { AntigravityCdpAdapter } from "../adapters/antigravity/index.js";
-import type { AgyPtyAdapter } from "../adapters/agy/pty.js";
+import type { AgyAdapter } from "../adapters/agy/index.js";
 import type { ProjectStore } from "../domains/projects.js";
 import type { AgentSessionRegistry } from "../domains/agent-sessions.js";
 import type { IProviderAdapter } from "../adapters/IProviderAdapter.js";
@@ -11,7 +11,7 @@ import { rejectIfMissing, requireBodyString } from "./route-helpers.js";
 
 interface Deps {
   antigravity: AntigravityCdpAdapter;
-  agy: AgyPtyAdapter;
+  agy: AgyAdapter;
   projects: ProjectStore;
   sessions: AgentSessionRegistry;
   discovery: SessionDiscoveryAggregator;
