@@ -1,0 +1,276 @@
+- generic [active] [ref=e1]:
+  - main:
+    - generic:
+      - generic:
+        - generic [ref=e4]:
+          - link "Google Antigravity" [ref=e5] [cursor=pointer]:
+            - /url: /
+            - img [ref=e7]
+          - generic [ref=e50]:
+            - navigation [ref=e51] [cursor=pointer]:
+              - button "Product" [ref=e54]:
+                - text: Product
+                - generic [ref=e55]: keyboard_arrow_down
+              - button "Use Cases" [ref=e58]:
+                - text: Use Cases
+                - generic [ref=e59]: keyboard_arrow_down
+              - button "Pricing" [expanded] [ref=e62]
+              - button "Blog" [expanded] [ref=e65]
+              - button "Resources" [ref=e68]:
+                - text: Resources
+                - generic [ref=e69]: keyboard_arrow_down
+            - button "Download download" [ref=e71] [cursor=pointer]:
+              - text: Download
+              - generic [ref=e72]: download
+        - generic [ref=e74]:
+          - generic [ref=e76]:
+            - generic [ref=e77]:
+              - generic [ref=e78] [cursor=pointer]:
+                - generic [ref=e79]: Product
+                - generic [ref=e80]: May 20, 2026
+              - heading "Google Antigravity SDK" [level=1] [ref=e81]
+              - generic [ref=e83]: The AI Platform Team, The Antigravity Team
+            - img "Google Antigravity SDK" [ref=e84]
+            - generic [ref=e85]:
+              - paragraph [ref=e88]:
+                - text: Today we are launching the Google Antigravity SDK in preview — a Python library that gives you programmatic access to Google's premier Antigravity coding agent. With the Antigravity SDK, you can prototype, build, and iterate on sophisticated agentic applications. Build on top of the Antigravity Agent Runtime with minimal code and explore and prototype novel agentic patterns with state-of-the-art primitives.
+                - link "GitHub repo" [ref=e89] [cursor=pointer]:
+                  - /url: https://github.com/google-antigravity/antigravity-sdk-python
+              - heading "Powered by the Antigravity Runtime" [level=4] [ref=e92]
+              - paragraph [ref=e95]:
+                - text: The SDK gives you the same agent runtime that powers
+                - link "Antigravity 2.0" [ref=e96] [cursor=pointer]:
+                  - /url: https://antigravity.google/blog/introducing-google-antigravity-2-0
+                - text: and the
+                - link "Antigravity CLI" [ref=e97] [cursor=pointer]:
+                  - /url: https://antigravity.google/blog/introducing-google-antigravity-cli
+                - text: . Your agent inherits a capable execution environment — a rich built-in toolset, a declarative safety-policy engine, lifecycle hooks for observing and steering every tool call, and stateful multi-turn sessions that persist across interactions. With the Antigravity SDK, you extend the same harness used for Google's internal research with your own logic. As the Antigravity runtime improves — faster tool execution, smarter planning, better context management — those same improvements flow to your SDK agents automatically.
+              - paragraph [ref=e100]:
+                - text: Most developers only need
+                - code [ref=e101]: Agent
+                - text: — a single async
+                - code [ref=e102]: with
+                - text: "block that manages the full lifecycle in under 20 lines of idiomatic Python. A functional agent in under 15 lines:"
+              - generic [ref=e104]:
+                - generic [ref=e105]:
+                  - generic [ref=e106]: shell
+                  - button "content_copy Copy" [ref=e107] [cursor=pointer]:
+                    - generic [ref=e108]: content_copy
+                    - generic [ref=e109]: Copy
+                - code [ref=e111]: pip install google-antigravity
+              - generic [ref=e113]:
+                - generic [ref=e114]:
+                  - generic [ref=e115]: py
+                  - button "content_copy Copy" [ref=e116] [cursor=pointer]:
+                    - generic [ref=e117]: content_copy
+                    - generic [ref=e118]: Copy
+                - code [ref=e120]: "import asyncio from google.antigravity import Agent, LocalAgentConfig async def main(): config = LocalAgentConfig() async with Agent(config) as agent: response = await agent.chat(\"What files are in the current directory?\") print(await response.text()) if __name__ == \"__main__\": asyncio.run(main())"
+              - paragraph [ref=e123]: "Your agent logic is decoupled from where it runs: and soon you'll be able to swap the local agentic loop for a remotely-hosted one and the same agent will deploy to the cloud — no rewrite required. You focus on what the agent does. The SDK handles how and where it runs."
+              - paragraph [ref=e126]: Every agent starts with a complete built-in toolset — file I/O, code editing, shell execution, directory search, image generation, and sub-agent delegation — ready at initialization. From there, layer in system instructions to set identity, add domain-specific guidance, or replace the defaults entirely.
+              - heading "Built for AI-Native Development" [level=4] [ref=e129]
+              - paragraph [ref=e132]: "The SDK is designed to be agent-friendly — for both the applications you build with it and how you build them. If you use Antigravity, you can ask the agent to write, test, and iterate on your SDK code directly within your development session. The API surface uses clean Python types (Pydantic V2 models, native Python collections), structured outputs, and clear naming conventions — all chosen so that AI agents can read, write, and maintain SDK code as fluently as human developers. The SDK is Antigravity's own API: the agent building your code understands the framework from the inside out."
+              - heading "Governed Extensibility" [level=3] [ref=e135]
+              - paragraph [ref=e138]: Customize your agent with your own Python functions, bind its output to your data types via structured output schemas, and control when and how tools are invoked.
+              - heading "Tools and Integrations" [level=4] [ref=e141]
+              - paragraph [ref=e144]: "The SDK supports four kinds of toolsets that all share one execution pipeline, one streaming infrastructure, and one set of safety policies:"
+              - list [ref=e147]:
+                - listitem [ref=e148]:
+                  - strong [ref=e149]: Built-in tools
+                  - text: — file I/O, code editing, shell execution, directory search, image generation, sub-agent delegation, and more.
+                - listitem [ref=e150]:
+                  - strong [ref=e151]: Custom Python functions
+                  - text: — register any Python callable as a tool the agent can invoke.
+                - listitem [ref=e152]:
+                  - strong [ref=e153]: MCP servers
+                  - text: — connect any
+                  - link "Model Context Protocol" [ref=e154] [cursor=pointer]:
+                    - /url: https://modelcontextprotocol.io/
+                  - text: server (stdio, SSE, or Streamable HTTP) and expose its tools to the agent.
+                - listitem [ref=e155]:
+                  - strong [ref=e156]: Agent skills
+                  - text: — provide paths to reusable skill packages of instructions, tools, and context via
+                  - code [ref=e157]: skills_paths
+                  - text: in the agent config.
+              - paragraph [ref=e160]: Define a policy or hook once, and it governs every tool — regardless of its source.
+              - heading "Safety Policies" [level=4] [ref=e163]
+              - paragraph [ref=e166]:
+                - text: Out of the box,
+                - code [ref=e167]: LocalAgentConfig
+                - text: enables all builtin tools but applies a
+                - code [ref=e168]: confirm_run_command()
+                - text: policy — most tools work without friction, but shell access is denied by default. To enable fully autonomous execution, pass
+                - code [ref=e169]: policies=[policy.allow_all()]
+                - text: ". When you're ready for more control, the policy system lets you lock things down declaratively:"
+              - generic [ref=e171]:
+                - generic [ref=e172]:
+                  - generic [ref=e173]: py
+                  - button "content_copy Copy" [ref=e174] [cursor=pointer]:
+                    - generic [ref=e175]: content_copy
+                    - generic [ref=e176]: Copy
+                - code [ref=e178]: "from google.antigravity.hooks.policy import deny, allow, ask_user policies = [ deny(\"*\"), # Block everything by default allow(\"view_file\"), # Except reading files ask_user(\"run_command\", handler=my_handler), # Human approval for shell ]"
+              - heading "Lifecycle Hooks" [level=4] [ref=e181]
+              - paragraph [ref=e184]: "Beyond policies, the hook system gives you lifecycle-level control. Hooks are classified into three categories:"
+              - list [ref=e187]:
+                - listitem [ref=e188]:
+                  - strong [ref=e189]: Inspect
+                  - text: — read-only, non-blocking. Observe events for logging, metrics, or audit trails.
+                - listitem [ref=e190]:
+                  - strong [ref=e191]: Decide
+                  - text: — read-only, blocking. Approve or deny actions (policies are built on this).
+                - listitem [ref=e192]:
+                  - strong [ref=e193]: Transform
+                  - text: — modifying, blocking. Reshape data in transit for sanitization or error recovery.
+              - paragraph [ref=e196]: "The SDK provides nine concrete hook points — from session start/end, through pre/post turn, to pre/post tool call, tool error recovery, user interaction handling, and context compaction — each with a decorator shortcut for quick wiring:"
+              - generic [ref=e198]:
+                - generic [ref=e199]:
+                  - generic [ref=e200]: py
+                  - button "content_copy Copy" [ref=e201] [cursor=pointer]:
+                    - generic [ref=e202]: content_copy
+                    - generic [ref=e203]: Copy
+                - code [ref=e205]:
+                  - text: "from google.antigravity.hooks import post_tool_call from google.antigravity.types import ToolResult @post_tool_call async def audit_log(result: ToolResult): print("
+                  - generic [ref=e206]:
+                    - text: f"Tool
+                    - generic [ref=e207]: "{result.name}"
+                    - text: completed"
+                  - text: )
+              - heading "Capabilities" [level=3] [ref=e210]
+              - heading "I/O & Execution" [level=4] [ref=e213]
+              - list [ref=e216]:
+                - listitem [ref=e217]:
+                  - strong [ref=e218]: Streaming
+                  - text: ": Access live model reasoning alongside output. Iterate with"
+                  - code [ref=e219]: async for chunk in response
+                  - text: for content.
+                - listitem [ref=e220]:
+                  - strong [ref=e221]: Multimodal input
+                  - text: ": Pass images, PDFs, audio, and video alongside text prompts. Auto-detect from file paths with"
+                  - code [ref=e222]: from_file()
+                  - text: or construct from raw bytes.
+                - listitem [ref=e223]:
+                  - strong [ref=e224]: Sub-agents
+                  - text: ": Spawn child agents with independent tools, instructions, and contexts — the building blocks behind agent teams."
+                - listitem [ref=e225]:
+                  - strong [ref=e226]: Thinking levels
+                  - text: ": Control reasoning depth per request —"
+                  - code [ref=e227]: MINIMAL
+                  - text: ","
+                  - code [ref=e228]: LOW
+                  - text: ","
+                  - code [ref=e229]: MEDIUM
+                  - text: ", or"
+                  - code [ref=e230]: HIGH
+                  - text: — via
+                  - code [ref=e231]: GenerationConfig
+                  - text: .
+                - listitem [ref=e232]:
+                  - strong [ref=e233]: Triggers
+                  - text: ": Run background tasks that react to external events and push messages into the agent."
+              - heading "State" [level=4] [ref=e236]
+              - list [ref=e239]:
+                - listitem [ref=e240]:
+                  - strong [ref=e241]: Session persistence
+                  - text: ": Resume conversations from saved session IDs by passing"
+                  - code [ref=e242]: conversation_id
+                  - text: back to the agent config.
+                - listitem [ref=e243]:
+                  - strong [ref=e244]: Structured output
+                  - text: ": Define a response schema (as a JSON schema, dict, or Pydantic model) and the agent returns validated, typed data via"
+                  - code [ref=e245]: response.structured_output()
+                  - text: .
+                - listitem [ref=e246]:
+                  - strong [ref=e247]: Human-in-the-loop
+                  - text: ": The agent pauses mid-task to ask structured questions with predefined options and branches on the response."
+              - heading "Observability" [level=4] [ref=e250]
+              - list [ref=e253]:
+                - listitem [ref=e254]:
+                  - strong [ref=e255]: Token usage
+                  - text: ": Per-turn and cumulative usage — prompt, candidate, cached, and thinking tokens — available via"
+                  - code [ref=e256]: usage_metadata
+                  - text: .
+                - listitem [ref=e257]:
+                  - strong [ref=e258]: Reasoning traces
+                  - text: ": Access thinking traces alongside output to observe the model's live reasoning process."
+              - paragraph [ref=e261]:
+                - text: With
+                - link "Gemini 3.5 Flash" [ref=e262] [cursor=pointer]:
+                  - /url: https://antigravity.google/blog/gemini-3-5-flash-in-google-antigravity
+                - text: as the default model, SDK agents get the performance that powers the rest of the platform. Hooks, sub-agents, and safety policies are consistent across the SDK, the
+                - link "CLI" [ref=e263] [cursor=pointer]:
+                  - /url: https://antigravity.google/blog/introducing-google-antigravity-cli
+                - text: ", and"
+                - link "Antigravity 2.0" [ref=e264] [cursor=pointer]:
+                  - /url: https://antigravity.google/blog/introducing-google-antigravity-2-0
+                - text: — configured in code here instead of the UI.
+              - heading "Looking Forward" [level=3] [ref=e267]
+              - paragraph [ref=e270]: We're building this with the developers, researchers, and platform engineers who will push agents into domains we haven't anticipated. As a Research Preview, the SDK is an evolving platform and we are seeking feedback to shape its future.
+              - paragraph [ref=e273]: "Here's what's on the roadmap:"
+              - list [ref=e276]:
+                - listitem [ref=e277]:
+                  - strong [ref=e278]: Remote harness
+                  - text: ": Deploy SDK agents to Google Cloud — persistent, scalable, accessible through the Interactions API. Build locally, deploy remotely."
+                - listitem [ref=e279]:
+                  - strong [ref=e280]: TypeScript and Go
+                  - text: ": Same runtime, additional language support."
+                - listitem [ref=e281]:
+                  - strong [ref=e282]: Gemma integration
+                  - text: ": We're working on Gemma support — bringing the full agent runtime to open models you can run and fine-tune yourself."
+                - listitem [ref=e283]:
+                  - strong [ref=e284]: Plugins
+                  - text: ": Reusable packages of instructions, tools, and context that you can compose into agents programmatically or load from the community."
+                - listitem [ref=e285]:
+                  - strong [ref=e286]: Deeper observability
+                  - text: ": Background step tracing, trigger execution logs, and richer telemetry for debugging and optimizing agent behavior at scale."
+              - heading "Get Started" [level=3] [ref=e289]
+              - paragraph [ref=e292]:
+                - text: "The SDK is Apache 2.0 licensed. It ships with two tiers of examples:"
+                - code [ref=e293]: getting_started/
+                - text: for single-feature walkthroughs, and
+                - code [ref=e294]: deep_dives/
+                - text: for more complex patterns. Full API documentation is available now.
+              - generic [ref=e296]:
+                - generic [ref=e297]:
+                  - generic [ref=e298]: shell
+                  - button "content_copy Copy" [ref=e299] [cursor=pointer]:
+                    - generic [ref=e300]: content_copy
+                    - generic [ref=e301]: Copy
+                - code [ref=e303]: pip install google-antigravity
+          - generic [ref=e305]:
+            - generic [ref=e308]:
+              - paragraph [ref=e310]: Experience liftoff
+              - generic [ref=e312]:
+                - link "Download" [ref=e313] [cursor=pointer]:
+                  - /url: /download
+                - link "Product" [ref=e314] [cursor=pointer]:
+                  - /url: /product
+                - link "Docs" [ref=e315] [cursor=pointer]:
+                  - /url: /docs
+                - link "Changelog" [ref=e316] [cursor=pointer]:
+                  - /url: /changelog
+                - link "Press" [ref=e317] [cursor=pointer]:
+                  - /url: /press
+                - link "Releases" [ref=e318] [cursor=pointer]:
+                  - /url: /releases
+              - generic [ref=e320]:
+                - link "Blog" [ref=e321] [cursor=pointer]:
+                  - /url: /blog
+                - link "Pricing" [ref=e322] [cursor=pointer]:
+                  - /url: /pricing
+                - link "Use Cases" [ref=e323] [cursor=pointer]:
+                  - /url: /use-cases
+            - generic [ref=e326]:
+              - generic:
+                - img
+            - generic [ref=e329]:
+              - link "Google" [ref=e331] [cursor=pointer]:
+                - /url: https://www.google.com
+                - img [ref=e333]
+              - navigation [ref=e336]:
+                - link "About Google" [ref=e337] [cursor=pointer]:
+                  - /url: https://about.google/
+                - link "Google Products" [ref=e338] [cursor=pointer]:
+                  - /url: https://about.google/products/
+                - link "Privacy" [ref=e339] [cursor=pointer]:
+                  - /url: https://policies.google.com/privacy?hl=en-US
+                - link "Terms" [ref=e340] [cursor=pointer]:
+                  - /url: /terms

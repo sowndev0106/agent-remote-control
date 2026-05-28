@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="opencode-brand-assets2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/ref-source/opencode/packages/console/app/public/opencode-brand-assets.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
