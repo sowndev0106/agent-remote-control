@@ -32,7 +32,7 @@ async function makeAuthedApp() {
 }
 
 describe("HTTP /api/providers", () => {
-  it("returns the 4 providers (auth required)", async () => {
+  it("returns the 5 providers (auth required)", async () => {
     const { app, cookieHeader } = await makeAuthedApp();
     const r = await app.inject({
       method: "GET",
@@ -42,7 +42,7 @@ describe("HTTP /api/providers", () => {
     expect(r.statusCode).toBe(200);
     const body = r.json();
     expect(body.ok).toBe(true);
-    expect(body.data.providers.length).toBe(4);
+    expect(body.data.providers.length).toBe(5);
     expect(body.data.providers.find((p: { id: string }) => p.id === "antigravity")
         .enabled).toBe(true);
     await app.close();
