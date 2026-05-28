@@ -9,13 +9,14 @@ import { AppError } from "../../core/errors.js";
 import type { TmuxScreenTarget } from "../../core/config.js";
 import { hasBinary, run } from "./mux-exec.js";
 import type { DiscoveredSession, SnapshotPayload } from "../IProviderAdapter.js";
+import type { Discoverable } from "../capabilities.js";
 
 /**
  * tmux control surface (REQ-045D / REQ-094B). Text-only: no DOM, so no action
  * buttons. Input via `tmux send-keys -l` (literal, injection-safe), output via
  * `tmux capture-pane -p`. Stop via Ctrl-C send.
  */
-export class AntigravityTmuxAdapter {
+export class AntigravityTmuxAdapter implements Discoverable {
   readonly providerId = "antigravity" as const;
 
   constructor(

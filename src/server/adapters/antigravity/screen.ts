@@ -12,13 +12,14 @@ import { AppError } from "../../core/errors.js";
 import type { TmuxScreenTarget } from "../../core/config.js";
 import { hasBinary, run } from "./mux-exec.js";
 import type { DiscoveredSession, SnapshotPayload } from "../IProviderAdapter.js";
+import type { Discoverable } from "../capabilities.js";
 
 /**
  * GNU screen control surface (REQ-045D). Input via `screen -X stuff`, snapshot
  * via `screen -X hardcopy <file>` then read the file. Text-only, same
  * capability profile as tmux.
  */
-export class AntigravityScreenAdapter {
+export class AntigravityScreenAdapter implements Discoverable {
   readonly providerId = "antigravity" as const;
 
   constructor(
