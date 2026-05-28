@@ -6,6 +6,7 @@ import { runStatus } from "./status.js";
 import { runOpen } from "./open.js";
 import { runConfig } from "./config.js";
 import { runAntigravityWrapper } from "./antigravity.js";
+import { runAgyWrapperCli } from "./agy.js";
 
 export async function main(argv: string[] = process.argv): Promise<void> {
   const program = new Command();
@@ -56,6 +57,18 @@ export async function main(argv: string[] = process.argv): Promise<void> {
     .option("--path", "Print just the path")
     .action(async (opts) => {
       await runConfig(opts);
+    });
+
+  // agy wrapper: runs agy in this terminal in a PTY, forwards output to the
+  // local server, and polls UI-queued input. Mirrors + remote-controls the
+  // session you see in your own terminal.
+  program
+    .command("agy <project>")
+    .description(
+      "Run agy for <project> in this terminal and mirror it to the local server",
+    )
+    .action(async (project: string) => {
+      await runAgyWrapperCli(project);
     });
 
   // Antigravity wrapper command: launch Antigravity in the user's terminal and
