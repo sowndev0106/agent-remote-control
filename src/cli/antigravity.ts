@@ -10,12 +10,12 @@ export interface WrapperOpts {
 }
 
 /**
- * `agent-remote-control antigravity <project>` — wrapper command.
+ * `agent-remote-control agy <project>` — wrapper command (alias: `antigravity`).
  *
  * Flow:
  *   1. Read IPC nonce + socket from the user-owned config dir.
  *   2. Ask the server to reserve a free debug port.
- *   3. spawn `antigravity <project> --remote-debugging-port=<port>` in the
+ *   3. spawn `agy <project> --remote-debugging-port=<port>` in the
  *      user's current terminal (inherit stdio — NOT a server-side PTY).
  *   4. After the process has launched, register the session by PID + port
  *      via IPC. The server tracks it as `owned: false` so it survives

@@ -95,8 +95,8 @@ workspace on `http://127.0.0.1:4096`.
     phone)      │  ├── Auth + session + CSRF                      │
                 │  ├── Provider adapters                          │
                 │  │     ├── Antigravity / CDP   ──► localhost:9000–9003 (Antigravity Electron)
-                │  │     ├── Antigravity / managed-PTY ──► node-pty ──► antigravity
-                │  │     ├── Antigravity / wrapper ◄── IPC socket ◄── `agent-remote-control antigravity`
+                │  │     ├── Antigravity / managed-PTY ──► node-pty ──► agy
+                │  │     ├── Antigravity / wrapper ◄── IPC socket ◄── `agent-remote-control agy`
                 │  │     ├── Antigravity / tmux  ──► `tmux send-keys` + `capture-pane`
                 │  │     ├── Antigravity / screen──► `screen -X` + hardcopy
                 │  │     └── Antigravity / unmanaged (read-only via /proc)
@@ -157,7 +157,7 @@ agent-remote-control/
 ├── bin/
 │   └── agent-remote-control          # thin CLI dispatcher
 ├── src/
-│   ├── cli/                          # subcommands: install, start, stop, status, open, config, antigravity, agy
+│   ├── cli/                          # subcommands: install, start, stop, status, open, config, agy (alias: antigravity)
 │   ├── server/
 │   │   ├── core/                     # bootstrap, auth, session, csrf, config, persistence, logger
 │   │   ├── http/                     # Fastify routes grouped by domain
@@ -328,11 +328,11 @@ tmux/screen, and unmanaged-process guidance behind the same dispatcher.
 - **CDP** is the preferred surface when both CDP and a terminal surface
   reach the same process (REQ-045E). The dispatcher dedupes by PID and
   merges sources into a single `Session` record with composite capabilities.
-- **managed-PTY** wraps `node-pty.spawn('antigravity', ...,
+- **managed-PTY** wraps `node-pty.spawn('agy', ...,
   --remote-debugging-port=<port>)`. The same session exposes both terminal
   I/O *and* CDP, because the spawn provides both.
-- **wrapper** is the user-side CLI (`agent-remote-control antigravity`,
-  `agent-remote-control agy`). It runs in the user's existing terminal —
+- **wrapper** is the user-side CLI (`agent-remote-control agy`,
+  `agent-remote-control antigravity`). It runs in the user's existing terminal —
   not a server-managed PTY — but registers the resulting Antigravity process
   via the IPC socket so the server can attach via CDP afterwards.
 - **tmux / screen** are explicit, user-configured targets. Capabilities are
@@ -499,13 +499,13 @@ Pool guarantees:
 
 ```text
 User shell:                    ~/.config/agent-remote-control/ipc.sock
-  $ agent-remote-control antigravity ./project  ──► IPC server (local nonce)
+  $ agent-remote-control agy ./project           ──► IPC server (local nonce)
         │                                              │
         │                                              ├─ reserve-port (9000–9003)
         │                                              ├─ register-session({pid, port, projectPath})
         │  ◄────  port assignment + sessionId  ─────────
         │
-        spawn antigravity ./project \
+        spawn agy ./project \
               --remote-debugging-port=<port>
 ```
 
@@ -968,7 +968,7 @@ agent-remote-control/
 │   ├── cli/
 │   │   ├── install.ts            # systemd unit, password setup
 │   │   ├── start.ts | stop.ts | status.ts | open.ts | config.ts
-│   │   └── antigravity.ts        # wrapper CLI (alias: agy)
+│   │   └── antigravity.ts        # wrapper CLI (commands: agy, antigravity-alias)
 │   ├── server/
 │   │   ├── core/
 │   │   │   ├── app.ts            # Fastify bootstrap

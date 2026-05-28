@@ -17,7 +17,7 @@ describe("SettingsView", () => {
       projects: { roots: [] },
       providers: {
         antigravity: {
-          command: "antigravity",
+          command: "agy",
           debugPortRange: [9000, 9100],
           wrapperCommands: [],
         },

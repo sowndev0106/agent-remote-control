@@ -84,7 +84,7 @@ export function defaultConfig(): AppConfig {
         enabled: true,
         adapter: "cdp",
         command: "antigravity",
-        wrapperCommands: ["antigravity", "agy"],
+        wrapperCommands: ["agy", "antigravity"],
         controlSurfaces: ["cdp", "managed-pty", "wrapper", "tmux", "screen"],
         debugPort: 9000,
         debugPortRange: [9000, 9001, 9002, 9003],

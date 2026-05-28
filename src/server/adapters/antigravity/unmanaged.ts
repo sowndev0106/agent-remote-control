@@ -14,7 +14,7 @@ export interface UnmanagedDetectorDeps {
   wrapperPids: () => Set<number>;
   /** PIDs that already expose CDP on a configured port. */
   cdpPids?: () => Set<number>;
-  /** Process-name match — defaults to "antigravity". */
+  /** Process-name match — defaults to "antigravity" (the Electron binary). */
   processName?: string;
   /** Inject a fake /proc reader for tests. */
   procScan?: () => Promise<RawProcess[]>;
@@ -77,8 +77,8 @@ export class UnmanagedDetector {
       this.deps.sessions.set(session);
 
       const recommendedCommand = p.cwd
-        ? `agent-remote-control antigravity ${p.cwd}`
-        : `agent-remote-control antigravity <project>`;
+        ? `agent-remote-control agy ${p.cwd}`
+        : `agent-remote-control agy <project>`;
       const entry: UnmanagedSession = {
         sessionId,
         providerId: "antigravity",

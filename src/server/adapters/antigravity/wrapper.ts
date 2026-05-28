@@ -15,8 +15,8 @@ interface WrapperRuntime {
 }
 
 /**
- * Wrapper adapter — Antigravity launched via `agent-remote-control antigravity
- * <project>` in the user's existing terminal. We do NOT own the PTY; the
+ * Wrapper adapter — Antigravity launched via `agent-remote-control agy
+ * <project>` (alias: `antigravity`) in the user's existing terminal. We do NOT own the PTY; the
  * wrapper CLI tells us "here's a session with this PID and debug port" via
  * IPC. Session is `owned: false` so shutdown will NOT SIGTERM it
  * (NFR-013A / H15).

@@ -64,11 +64,11 @@ agent-remote-control stop                     Stop the user service
 agent-remote-control status                   Print bind addr + systemctl status
 agent-remote-control open                     xdg-open the web UI
 agent-remote-control config [--path|--edit]   Print or edit config.json
-agent-remote-control antigravity <project>    Wrapper launch: spawns Antigravity for <project>
-agent-remote-control agy <project>            Alias for `antigravity`
+agent-remote-control agy <project>            Wrapper launch: spawns Antigravity for <project>
+agent-remote-control antigravity <project>    Alias for `agy`
 ```
 
-The `antigravity`/`agy` wrapper commands run in your current terminal (stdio
+The `agy`/`antigravity` wrapper commands run in your current terminal (stdio
 inherited) and register the session with the server over a Unix socket so the
 browser can attach. The launched process is *unowned* — closing the wrapper
 or stopping the service does **not** kill it (NFR-013A).
@@ -115,7 +115,7 @@ applied for any missing fields. Key knobs:
   },
   "providers": {
     "antigravity": {
-      "command": "antigravity",
+      "command": "agy",
       "debugPortRange": [9000, 9001, 9002, 9003],
       "tmuxTargets":  [{ "name": "my-tmux-session", "project": "/path/to/proj" }],
       "screenTargets": []

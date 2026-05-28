@@ -58,20 +58,20 @@ export async function main(argv: string[] = process.argv): Promise<void> {
       await runConfig(opts);
     });
 
-  // Wrapper commands: `antigravity <project>` and its `agy` alias.
+  // Wrapper commands: `agy <project>` and its `antigravity` alias.
   const wrap = (cmd: string) =>
     program
       .command(`${cmd} <project>`)
       .description(
-        cmd === "antigravity"
+        cmd === "agy"
           ? "Launch Antigravity for <project> and register it with the local server"
-          : "Alias for `antigravity`",
+          : "Alias for `agy`",
       )
       .action(async (project: string) => {
         await runAntigravityWrapper({ project });
       });
-  wrap("antigravity");
   wrap("agy");
+  wrap("antigravity");
 
   await program.parseAsync(argv);
 }
