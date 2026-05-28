@@ -97,7 +97,7 @@ export function Workspace() {
         <div className="flex-1 min-w-0 flex flex-col">
           {!session && !showFileViewer && (
             <div className="p-3">
-              <SessionDiscoveryList projectId={active.id} />
+              <SessionDiscoveryList projectId={active.id} provider={activeProvider} />
             </div>
           )}
           {showFileViewer ? (

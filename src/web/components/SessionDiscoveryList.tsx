@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useSessions } from "../stores/sessions.js";
+import type { ProviderId } from "../stores/types.js";
 
 const SOURCE_LABELS: Record<string, string> = {
   cdp: "CDP",
@@ -10,12 +11,18 @@ const SOURCE_LABELS: Record<string, string> = {
   unmanaged: "External",
 };
 
-export function SessionDiscoveryList({ projectId }: { projectId: string }) {
+export function SessionDiscoveryList({
+  projectId,
+  provider,
+}: {
+  projectId: string;
+  provider?: ProviderId;
+}) {
   const { discovered, discover, attach, launch } = useSessions();
 
   useEffect(() => {
-    void discover(projectId);
-  }, [discover, projectId]);
+    void discover(projectId, provider);
+  }, [discover, projectId, provider]);
 
   return (
     <div className="border border-border rounded bg-bg-1 p-3">
@@ -26,14 +33,14 @@ export function SessionDiscoveryList({ projectId }: { projectId: string }) {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => void discover(projectId)}
+            onClick={() => void discover(projectId, provider)}
             className="text-xs bg-bg-2 border border-border rounded px-2 py-1"
           >
             refresh
           </button>
           <button
             type="button"
-            onClick={() => void launch(projectId)}
+            onClick={() => void launch(projectId, provider)}
             className="text-xs bg-accent hover:bg-accent-hover text-white rounded px-2 py-1"
             data-testid="launch-session"
           >

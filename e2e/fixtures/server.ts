@@ -1,6 +1,6 @@
 import { execSync, spawn, type ChildProcess } from "node:child_process";
 import { createServer } from "node:net";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -40,6 +40,10 @@ export async function startTestServer(): Promise<RunningServer> {
   cfg.security.passwordHashAlgorithm = algorithm;
   cfg.projects.roots = [projectDir];
   cfg.terminal.enabled = true;
+  // Point the agy provider at a local stub so e2e never invokes the real CLI.
+  const agyStub = join(root, "e2e", "fixtures", "agy-stub.cjs");
+  await chmod(agyStub, 0o755);
+  cfg.providers.agy.command = agyStub;
   await writeFile(
     join(appCfgDir, "config.json"),
     JSON.stringify({ version: 1, data: cfg }, null, 2),
