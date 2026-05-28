@@ -167,6 +167,7 @@ export async function assembleServer(opts: AssembleOpts): Promise<AssembledServe
   const agy = new AgyAdapter({ pty: agyPty, wrapper: agyWrapper });
   const discovery = new SessionDiscoveryAggregator([
     antigravity,
+    agy,
     tmux,
     screen,
     unmanaged,

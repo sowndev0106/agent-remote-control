@@ -42,8 +42,12 @@ export class AgyAdapter implements IProviderAdapter {
     return this.inner.pty.detect();
   }
 
-  listDiscoveredSessions(projectPath?: string): Promise<DiscoveredSession[]> {
-    return this.inner.pty.listDiscoveredSessions(projectPath);
+  async listDiscoveredSessions(projectPath?: string): Promise<DiscoveredSession[]> {
+    const [pty, wrapper] = await Promise.all([
+      this.inner.pty.listDiscoveredSessions(projectPath),
+      this.inner.wrapper.listDiscoveredSessions(projectPath),
+    ]);
+    return [...pty, ...wrapper];
   }
 
   start(projectPath: string): Promise<Session> {

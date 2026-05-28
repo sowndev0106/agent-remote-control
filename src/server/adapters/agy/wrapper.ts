@@ -5,7 +5,12 @@ import { EVENT_TYPES, envelope } from "../../core/realtime/events.js";
 import type { RealtimeBus } from "../../core/realtime/bus.js";
 import { AgentSessionRegistry } from "../../domains/agent-sessions.js";
 import { allUnsupportedCapabilities, type CapabilityMap, type Session } from "../../domains/types.js";
-import type { ActionDescriptor, ConversationDescriptor, SnapshotPayload } from "../IProviderAdapter.js";
+import type {
+  ActionDescriptor,
+  ConversationDescriptor,
+  DiscoveredSession,
+  SnapshotPayload,
+} from "../IProviderAdapter.js";
 import { getAgyActions, inputForAgyAction } from "./actions.js";
 import { listAgyConversations } from "./conversations.js";
 import { AgySnapshotBuffer } from "./snapshot.js";
@@ -107,6 +112,26 @@ export class AgyWrapperAdapter {
       rt.lastSnapshotHash = snap.hash;
       this.opts.bus.publish(envelope(EVENT_TYPES.ProviderSnapshotChanged, snap, { sessionId }));
     }
+  }
+
+  /** Surface currently-registered wrapper sessions to the discovery aggregator. */
+  async listDiscoveredSessions(_projectPath?: string): Promise<DiscoveredSession[]> {
+    const out: DiscoveredSession[] = [];
+    for (const rt of this.byId.values()) {
+      if (rt.session.status !== "running") continue;
+      const hint =
+        `agy ${rt.pid ? `pid ${rt.pid} ` : ""}${rt.session.projectPath ?? ""}`.trim();
+      const d: DiscoveredSession = {
+        sessionId: rt.session.sessionId,
+        providerId: "agy",
+        source: "agy-wrapper",
+        hint,
+        active: true,
+      };
+      if (rt.session.projectPath !== undefined) d.projectPath = rt.session.projectPath;
+      out.push(d);
+    }
+    return out;
   }
 
   pollInput(sessionId: string): string[] {

@@ -53,6 +53,21 @@ describe("AgyWrapperAdapter", () => {
     expect(await adapter.getStatus(s)).toBe("stopped");
   });
 
+  it("surfaces registered sessions to discovery and drops unregistered ones", async () => {
+    const { adapter } = make();
+    const a = adapter.register({ pid: 11, projectPath: "/p" });
+    const b = adapter.register({ pid: 12, projectPath: "/q" });
+    const discovered = await adapter.listDiscoveredSessions();
+    expect(discovered.map((d) => d.sessionId).sort()).toEqual(
+      [a.sessionId, b.sessionId].sort(),
+    );
+    expect(discovered[0]!.source).toBe("agy-wrapper");
+    expect(discovered.find((d) => d.sessionId === a.sessionId)!.projectPath).toBe("/p");
+    adapter.unregister(a.sessionId);
+    const after = await adapter.listDiscoveredSessions();
+    expect(after.map((d) => d.sessionId)).toEqual([b.sessionId]);
+  });
+
   it("unregister marks the session stopped", () => {
     const { adapter, sessions } = make();
     const s = adapter.register({ pid: 7 });

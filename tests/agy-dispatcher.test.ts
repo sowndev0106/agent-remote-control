@@ -44,9 +44,13 @@ describe("AgyAdapter dispatcher", () => {
     expect(wrapper.pollInput(w.sessionId)).toEqual(["z"]);
   });
 
-  it("exposes providerId agy and empty discovery", async () => {
-    const { adapter } = make();
+  it("discovery combines pty (none) with wrapper sessions", async () => {
+    const { adapter, wrapper } = make();
     expect(adapter.providerId).toBe("agy");
     expect(await adapter.listDiscoveredSessions("/p")).toEqual([]);
+    wrapper.register({ pid: 99, projectPath: "/p" });
+    const d = await adapter.listDiscoveredSessions("/p");
+    expect(d).toHaveLength(1);
+    expect(d[0]!.source).toBe("agy-wrapper");
   });
 });

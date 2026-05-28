@@ -9,6 +9,9 @@ const SOURCE_LABELS: Record<string, string> = {
   tmux: "tmux",
   screen: "screen",
   unmanaged: "External",
+  "agy-pty": "agy (server)",
+  "agy-wrapper": "agy (terminal)",
+  "agy-unmanaged": "agy (external)",
 };
 
 export function SessionDiscoveryList({
@@ -24,11 +27,13 @@ export function SessionDiscoveryList({
     void discover(projectId, provider);
   }, [discover, projectId, provider]);
 
+  const providerLabel = provider === "agy" ? "agy" : "Antigravity";
+
   return (
     <div className="border border-border rounded bg-bg-1 p-3">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-xs uppercase tracking-wide text-fg-2">
-          Discovered Antigravity sessions
+          Discovered {providerLabel} sessions
         </h3>
         <div className="flex gap-2">
           <button
@@ -49,10 +54,19 @@ export function SessionDiscoveryList({
         </div>
       </div>
       {discovered.length === 0 ? (
-        <p className="text-xs text-fg-2">
-          No Antigravity CDP targets reachable. Launch one, or open Antigravity with{" "}
-          <code className="font-mono">--remote-debugging-port=9000</code>.
-        </p>
+        provider === "agy" ? (
+          <p className="text-xs text-fg-2">
+            No agy sessions yet. Click <strong>launch new</strong> to start one in
+            a server PTY, or run{" "}
+            <code className="font-mono">agent-remote-control agy &lt;project&gt;</code>{" "}
+            in your terminal to mirror a user-owned session here.
+          </p>
+        ) : (
+          <p className="text-xs text-fg-2">
+            No Antigravity CDP targets reachable. Launch one, or open Antigravity with{" "}
+            <code className="font-mono">--remote-debugging-port=9000</code>.
+          </p>
+        )
       ) : (
         <ul className="space-y-1">
           {discovered.map((s) => {

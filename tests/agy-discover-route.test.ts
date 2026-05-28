@@ -27,4 +27,31 @@ describe("agy discover route", () => {
     const body = res.json();
     expect(body.ok).toBe(true);
   });
+
+  it("surfaces a registered agy-wrapper session in /api/sessions/discover", async () => {
+    // Simulate what the wrapper CLI does via IPC: register a user-owned session.
+    const w = fx.assembled.deps.agyWrapper.register({
+      pid: 9999,
+      projectPath: "/tmp/agy-wrapper-demo",
+    });
+
+    const res = await fx.assembled.app.inject({
+      method: "POST",
+      url: "/api/sessions/discover?provider=agy",
+      headers: { cookie: fx.cookieHeader, "x-csrf-token": fx.csrfVal },
+      payload: {},
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    const sources = body.data.sessions.map((s: { source: string }) => s.source);
+    expect(sources).toContain("agy-wrapper");
+    const found = body.data.sessions.find(
+      (s: { sessionId: string }) => s.sessionId === w.sessionId,
+    );
+    expect(found).toMatchObject({
+      providerId: "agy",
+      source: "agy-wrapper",
+      projectPath: "/tmp/agy-wrapper-demo",
+    });
+  });
 });
