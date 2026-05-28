@@ -5,6 +5,8 @@ import {
   allUnsupportedCapabilities,
 } from "../../domains/types.js";
 import type { DiscoveredSession } from "../IProviderAdapter.js";
+import type { Discoverable } from "../capabilities.js";
+import type { ProviderId } from "../../domains/types.js";
 
 export interface UnmanagedDetectorDeps {
   sessions: AgentSessionRegistry;
@@ -37,14 +39,16 @@ export interface UnmanagedSession extends DiscoveredSession {
  * control (no CDP, no wrapper, no managed PTY). Linux /proc only (Phase 1 is
  * Ubuntu). Never sends signals — read-only (NFR-013A / REQ-100, REQ-101).
  */
-export class UnmanagedDetector {
+export class UnmanagedDetector implements Discoverable {
+  readonly providerId: ProviderId = "antigravity";
+
   constructor(private deps: UnmanagedDetectorDeps) {}
 
   private get name(): string {
     return this.deps.processName ?? "antigravity";
   }
 
-  async scan(): Promise<UnmanagedSession[]> {
+  async listDiscoveredSessions(_projectPath?: string): Promise<UnmanagedSession[]> {
     const procs = this.deps.procScan
       ? await this.deps.procScan()
       : await scanProc(this.name);

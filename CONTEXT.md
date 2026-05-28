@@ -49,3 +49,12 @@ only place.
   `{ok: true, sessionId} | {ok: false, reason}`. Companion helpers
   `reject401(socket)` and `reject404(socket)` write the canonical socket
   responses.
+
+## Discovery seam
+
+- **Discoverable** (`src/server/adapters/capabilities.ts`) — narrow interface
+  satisfied by every adapter that contributes to session discovery
+  (`AntigravityCdpAdapter`, `AntigravityTmuxAdapter`,
+  `AntigravityScreenAdapter`, `UnmanagedDetector`). `SessionDiscoveryAggregator`
+  consumes a `Discoverable[]` registered at assembly time; new sources arrive
+  as new array entries, not constructor edits.
