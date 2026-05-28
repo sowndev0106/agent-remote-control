@@ -66,7 +66,7 @@ export class AntigravityTmuxAdapter implements Discoverable {
   }
 
   /** Discovered tmux sessions = configured targets that actually exist. */
-  async listDiscoveredSessions(): Promise<DiscoveredSession[]> {
+  async listDiscoveredSessions(_projectPath?: string): Promise<DiscoveredSession[]> {
     if (!(await this.available())) return [];
     const live = new Set(await this.listSessions());
     const out: DiscoveredSession[] = [];

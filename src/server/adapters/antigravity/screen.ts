@@ -65,7 +65,7 @@ export class AntigravityScreenAdapter implements Discoverable {
     return names;
   }
 
-  async listDiscoveredSessions(): Promise<DiscoveredSession[]> {
+  async listDiscoveredSessions(_projectPath?: string): Promise<DiscoveredSession[]> {
     if (!(await this.available())) return [];
     const live = new Set(await this.listSessions());
     const out: DiscoveredSession[] = [];
