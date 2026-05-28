@@ -1,5 +1,6 @@
 import { mkdir, rename, readFile, chmod, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import { randomUUID } from "node:crypto";
 import lockfile from "proper-lockfile";
 
 export const CURRENT_VERSION = 1;
@@ -25,7 +26,7 @@ export async function writePersisted<T>(path: string, data: T): Promise<void> {
   await chmod(dir, 0o700).catch(() => {
     /* dir might be ~/.config which is not ours to lock down */
   });
-  const tmp = `${path}.${process.pid}.${Date.now()}.tmp`;
+  const tmp = `${path}.${process.pid}.${Date.now()}.${randomUUID()}.tmp`;
   const envelope: Envelope<T> = { version: CURRENT_VERSION, data };
   await writeFile(tmp, JSON.stringify(envelope, null, 2), { mode: 0o600 });
   await chmod(tmp, 0o600);

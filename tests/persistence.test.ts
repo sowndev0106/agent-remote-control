@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtemp, rm, readFile, stat, chmod, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,6 +13,7 @@ beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), "arc-"));
 });
 afterEach(async () => {
+  vi.restoreAllMocks();
   await rm(dir, { recursive: true, force: true });
 });
 
@@ -37,6 +38,21 @@ describe("persistence", () => {
     const path = join(dir, "x.json");
     await writePersisted(path, { a: 1 });
     expect(await readPersisted<{ a: number }>(path)).toEqual({ a: 1 });
+  });
+
+  it("does not collide temp filenames during concurrent writes", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(123);
+    const path = join(dir, "x.json");
+
+    await expect(
+      Promise.all([
+        writePersisted(path, { value: "a" }),
+        writePersisted(path, { value: "b" }),
+      ]),
+    ).resolves.toHaveLength(2);
+
+    const data = await readPersisted<{ value: string }>(path);
+    expect(data?.value).toMatch(/^[ab]$/);
   });
 
   it("refuses files missing version", async () => {
