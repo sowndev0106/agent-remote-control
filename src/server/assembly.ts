@@ -18,6 +18,7 @@ import { AntigravityTmuxAdapter } from "./adapters/antigravity/tmux.js";
 import { AntigravityScreenAdapter } from "./adapters/antigravity/screen.js";
 import { UnmanagedDetector } from "./adapters/antigravity/unmanaged.js";
 import { AgyPtyAdapter } from "./adapters/agy/pty.js";
+import { AgyWrapperAdapter } from "./adapters/agy/wrapper.js";
 import type { PtyHandle, SpawnPtyOpts } from "./pty/pty.js";
 import { SessionDiscoveryAggregator } from "./domains/discovery.js";
 import { DebugPortPool, startIpcServer } from "./ipc/wire.js";
@@ -72,6 +73,7 @@ export interface AssembledDeps {
   screen: AntigravityScreenAdapter;
   unmanaged: UnmanagedDetector;
   agy: AgyPtyAdapter;
+  agyWrapper: AgyWrapperAdapter;
   discovery: SessionDiscoveryAggregator;
   terminal: TerminalService;
   portPool: DebugPortPool;
@@ -154,6 +156,12 @@ export async function assembleServer(opts: AssembleOpts): Promise<AssembledServe
     conversationsDir: config.providers.agy.conversationsDir,
     ...(overrides.agySpawn ? { spawn: overrides.agySpawn } : {}),
   });
+  const agyWrapper = new AgyWrapperAdapter({
+    sessions: agentSessions,
+    bus,
+    scrollback: config.providers.agy.scrollback,
+    conversationsDir: config.providers.agy.conversationsDir,
+  });
   const discovery = new SessionDiscoveryAggregator([
     antigravity,
     tmux,
@@ -204,6 +212,7 @@ export async function assembleServer(opts: AssembleOpts): Promise<AssembledServe
     try {
       ipc = await startIpcServer({
         wrapper,
+        agyWrapper,
         reservePort: async () => portPool.reserve(),
         releasePort: (p) => portPool.release(p),
       });
@@ -226,6 +235,7 @@ export async function assembleServer(opts: AssembleOpts): Promise<AssembledServe
     screen,
     unmanaged,
     agy,
+    agyWrapper,
     discovery,
     terminal,
     portPool,
