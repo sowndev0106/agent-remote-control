@@ -141,12 +141,12 @@ export async function assembleServer(opts: AssembleOpts): Promise<AssembledServe
     wrapperPids: () => new Set(),
     processName: config.providers.antigravity.command,
   });
-  const discovery = new SessionDiscoveryAggregator({
-    cdp: antigravity,
+  const discovery = new SessionDiscoveryAggregator([
+    antigravity,
     tmux,
     screen,
     unmanaged,
-  });
+  ]);
   const terminal = new TerminalService({
     enabled: config.terminal.enabled,
     shell: config.terminal.shell,
